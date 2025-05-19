@@ -1,0 +1,32 @@
+<div class="login-page">
+  <div class="login-left">
+     <img src="https://images.unsplash.com/photo-1573164574572-cb89e39749b4" alt="Fondo" />
+
+
+
+  </div>
+  <div class="login-right">
+    <div class="login-box">
+      <h2>Iniciar sesión</h2>
+      <p>Accede a la plataforma del aula virtual.</p>
+
+      <form (ngSubmit)="onSubmit()">
+        <input type="text" placeholder="Correo electrónico" [(ngModel)]="username" name="username" required />
+        <input type="password" placeholder="Contraseña" [(ngModel)]="password" name="password" required />
+        <button type="submit">Entrar</button>
+      </form>
+
+      <div class="options">
+        <a href="#">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <div class="social-login">
+        <p>O inicia sesión con:</p>
+        <div class="social-buttons">
+          <button class="fb">Facebook</button>
+          <button class="google">Google</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

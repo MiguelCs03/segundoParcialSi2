@@ -1,0 +1,6 @@
+django>=4.0
+djangorestframework
+psycopg2-binary
+drf-yasg
+# Quita el comentario si usas autenticación por token:
+# djangorestframework-authtoken

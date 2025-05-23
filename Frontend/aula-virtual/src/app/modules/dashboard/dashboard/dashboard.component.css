@@ -1,0 +1,20 @@
+.dashboard-container {
+  padding: 20px;
+}
+
+.dashboard-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.cards {
+  display: flex;
+  gap: 20px;
+}
+
+.card {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+}

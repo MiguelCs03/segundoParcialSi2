@@ -1,8 +1,30 @@
 import { Routes } from '@angular/router';
-import { authRoutes } from './modules/auth/auth.routes';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  ...authRoutes,
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: '**', redirectTo: 'login' }
+
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./modules/auth/pages/login/login.component').then((m) => m.default),
+  },
+
+  // Sin guard ni componente hasta que existan
+  {
+    path: 'profesor',
+    redirectTo: 'login',
+    pathMatch: 'full',
+  },
+  {
+    path: 'mi-rendimiento',
+    redirectTo: 'login',
+    pathMatch: 'full',
+  },
+  {
+    path: 'mi-hijo',
+    redirectTo: 'login',
+    pathMatch: 'full',
+  },
 ];
+

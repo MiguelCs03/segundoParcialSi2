@@ -3,4 +3,8 @@ djangorestframework
 psycopg2-binary
 drf-yasg
 # Quita el comentario si usas autenticación por token:
+<<<<<<< HEAD
 # djangorestframework-authtoken
+=======
+# djangorestframework-authtokenggg
+>>>>>>> backend_estructura

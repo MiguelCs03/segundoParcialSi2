@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from Backend.permissions import SoloUsuariosConRol
 from rest_framework import viewsets
 from .models import (
     Nivel, Materia, DetalleMateria, Asistencia
@@ -16,6 +16,7 @@ class NivelViewSet(viewsets.ModelViewSet):
 class MateriaViewSet(viewsets.ModelViewSet):
     queryset = Materia.objects.all()
     serializer_class = MateriaSerializer
+    permission_classes = [SoloUsuariosConRol]
 
 class DetalleMateriaViewSet(viewsets.ModelViewSet):
     queryset = DetalleMateria.objects.all()

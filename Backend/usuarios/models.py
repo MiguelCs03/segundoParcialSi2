@@ -45,7 +45,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES)
     fecha_nacimiento = models.DateField()
     estado = models.BooleanField(default=True)
-    codigo = models.CharField(max_length=20)
+    codigo = models.CharField(max_length=50, unique=True)
     rol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios')
     tutor = models.ForeignKey(
         'self',
@@ -57,7 +57,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
-    USERNAME_FIELD = 'ci'
+    USERNAME_FIELD = 'codigo'
     REQUIRED_FIELDS = ['nombre', 'sexo', 'fecha_nacimiento']
 
     objects = UsuarioManager()

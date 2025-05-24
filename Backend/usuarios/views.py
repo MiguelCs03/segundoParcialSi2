@@ -23,11 +23,7 @@ def login_view(request):
     user = authenticate(request, username=codigo, password=password)
     if user is not None:
         login(request, user)
-        serialized = UsuarioSerializer(user)
-        return Response({
-            'detail': 'Login exitoso',
-            'usuario': serialized.data
-        }, status=status.HTTP_200_OK)
+        return Response({'detail': 'Login exitoso'}, status=status.HTTP_200_OK)
     return Response({'detail': 'Código o contraseña incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
 
 # LOGOUT VIEW

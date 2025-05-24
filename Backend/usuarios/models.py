@@ -58,7 +58,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'codigo'
-    REQUIRED_FIELDS = ['ci','nombre', 'sexo', 'fecha_nacimiento']
+    REQUIRED_FIELDS = ['nombre', 'sexo', 'fecha_nacimiento']
 
     objects = UsuarioManager()
 

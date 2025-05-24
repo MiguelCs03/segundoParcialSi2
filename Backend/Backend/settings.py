@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'libreta',
     'actividad',
     'drf_yasg',
-    'corsheaders',
     # 'rest_framework.authtoken',  # Uncomment if you are using token authentication
     # Add your apps here
 ]
@@ -54,7 +53,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'Backend.urls'
@@ -84,8 +82,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'colegio_db',
-        'USER': 'postgres',
-        'PASSWORD': 'mcangel03',
+        'USER': 'colegio_db',
+        'PASSWORD': 'colegio_db',
         'HOST': 'localhost',  # Usa 'localhost' si ejecutas Django fuera de Docker
         'PORT': '5432',
     }
@@ -136,5 +134,3 @@ AUTHENTICATION_BACKENDS = [
     'usuarios.backends.CodigoBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
-
-CORS_ALLOW_ALL_ORIGINS = True  # Solo para desarrollo

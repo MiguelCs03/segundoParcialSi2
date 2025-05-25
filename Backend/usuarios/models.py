@@ -45,11 +45,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     sexo = models.CharField(max_length=1, choices=SEXO_CHOICES)
     fecha_nacimiento = models.DateField()
     estado = models.BooleanField(default=True)
-<<<<<<< HEAD
-    codigo = models.CharField(max_length=50, unique=True)
-=======
     codigo = models.BigIntegerField(unique=True)  # Ahora es numérico
->>>>>>> backend_estructura
     rol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios')
     tutor = models.ForeignKey(
         'self',
@@ -60,15 +56,9 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     )  # Solo se usa si el usuario es estudiante
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-<<<<<<< HEAD
-
-    USERNAME_FIELD = 'codigo'
-    REQUIRED_FIELDS = ['nombre', 'sexo', 'fecha_nacimiento']
-=======
    
     USERNAME_FIELD = 'codigo'
     REQUIRED_FIELDS = ['ci', 'nombre', 'sexo', 'fecha_nacimiento']
->>>>>>> backend_estructura
 
     objects = UsuarioManager()
 

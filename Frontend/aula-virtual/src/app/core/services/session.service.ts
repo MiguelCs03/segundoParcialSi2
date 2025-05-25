@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
 
-
 export interface Usuario {
   id: number;
   nombre: string;
@@ -18,21 +17,34 @@ export class SessionService {
   private readonly storageKey = 'usuario';
 
   constructor(private router: Router, private http: HttpClient) {
-   if (typeof localStorage !== 'undefined') {
-  const data = localStorage.getItem(this.storageKey);
-  if (data) this.usuario.set(JSON.parse(data));
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(this.storageKey);
+      try {
+        const parsed = raw ? JSON.parse(raw) : null;
+        this.usuario.set(parsed);
+      } catch {
+        localStorage.removeItem(this.storageKey);
+        this.usuario.set(null);
+      }
     }
   }
 
   login(codigo: string, password: string) {
-  return this.http.post<{ detail: string; usuario: Usuario }>('http://127.0.0.1:8000/api/login/', { codigo, password }).pipe(
-    tap((resp) => {
-      this.setUsuario(resp.usuario);
-      this.redireccionarPorRol(resp.usuario.rol?.nombre);
-    })
-  );
- }
+    return this.http.post<{ access: string; refresh: string; usuario: Usuario }>(
+      'http://127.0.0.1:8000/api/login/',
+      { codigo, password }
+    ).pipe(
+      tap((resp) => {
+        // Guarda los tokens JWT
+        localStorage.setItem('access_token', resp.access);
+        localStorage.setItem('refresh_token', resp.refresh);
 
+        // Guarda el usuario y redirige por rol
+        this.setUsuario(resp.usuario);
+        this.redireccionarPorRol(resp.usuario.rol?.nombre);
+      })
+    );
+  }
 
   private redireccionarPorRol(rol: string) {
     switch (rol) {
@@ -54,20 +66,21 @@ export class SessionService {
   }
 
   setUsuario(usuario: Usuario) {
-  this.usuario.set(usuario);
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(this.storageKey, JSON.stringify(usuario));
+    this.usuario.set(usuario);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(this.storageKey, JSON.stringify(usuario));
+    }
   }
-}
 
-logout() {
-  this.usuario.set(null);
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem(this.storageKey);
+  logout() {
+    this.usuario.set(null);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this.storageKey);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    }
+    this.router.navigate(['/login']);
   }
-  this.router.navigate(['/login']);
-}
-
 
   get currentUser() {
     return this.usuario();

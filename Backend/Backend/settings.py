@@ -28,6 +28,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders', 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -53,6 +54,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', 
+
 ]
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -86,8 +89,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'colegio_db',
-        'USER': 'colegio_db',
-        'PASSWORD': 'colegio_db',
+        'USER': 'postgres',
+        'PASSWORD': 'mcangel03',
         'HOST': 'localhost',  # Usa 'localhost' si ejecutas Django fuera de Docker
         'PORT': '5432',
     }
@@ -138,3 +141,4 @@ AUTHENTICATION_BACKENDS = [
     'usuarios.backends.CodigoBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+CORS_ALLOW_ALL_ORIGINS = True

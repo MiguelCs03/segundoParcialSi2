@@ -22,7 +22,7 @@ export default class LoginComponent {
     this.session.login(this.codigo, this.password).subscribe({
       next: () => {},
       error: err => {
-        this.error = err.error?.detail || 'Error en login';
+        this.error = err.error?.detail || 'Código o contraseña incorrectos';
       }
     });
   }

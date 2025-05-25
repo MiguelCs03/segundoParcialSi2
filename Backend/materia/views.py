@@ -16,7 +16,7 @@ class NivelViewSet(viewsets.ModelViewSet):
 class MateriaViewSet(viewsets.ModelViewSet):
     queryset = Materia.objects.all()
     serializer_class = MateriaSerializer
-    permission_classes = [SoloUsuariosConRol]
+    #permission_classes = [SoloUsuariosConRol]
 
 class DetalleMateriaViewSet(viewsets.ModelViewSet):
     queryset = DetalleMateria.objects.all()

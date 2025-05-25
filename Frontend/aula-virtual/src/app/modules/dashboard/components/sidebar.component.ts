@@ -18,19 +18,23 @@ import { SessionService } from '../../../core/services/session.service';
         <a routerLink="/configuracion" class="block py-2 px-3 rounded hover:bg-slate-700">⚙️ Configuración</a>
       </nav>
       <div class="p-4 border-t border-slate-700">
-       <button (click)="cerrarSesion()" class="w-full text-left py-2 px-3 hover:bg-red-700 rounded">
-  🔓 Cerrar sesión
-</button>
-
+        <button (click)="cerrarSesion()" class="w-full text-left py-2 px-3 hover:bg-red-700 rounded">
+    🔓 Cerrar sesión
+        </button>
       </div>
     </aside>
   `
 })
 export class SidebarComponent {
-    constructor(private session: SessionService) {}
+  constructor(private session: SessionService) {}
 
   cerrarSesion() {
-    console.log('✅ Cerrando sesión...');
-    this.session.logout();
+    const confirmar = confirm('¿Estás seguro de que deseas cerrar sesión?');
+    if (confirmar) {
+      console.log('✅ Cerrando sesión...');
+      this.session.logout();
+    } else {
+      console.log('❎ Cancelado por el usuario.');
+    }
   }
 }

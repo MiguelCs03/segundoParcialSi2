@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -11,10 +12,11 @@ export const routes: Routes = [
   },
 
   // Sin guard ni componente hasta que existan
-  {
-    path: 'profesor',
-    redirectTo: 'login',
-    pathMatch: 'full',
+ {
+  path: 'profesor',
+  canActivate: [authGuard, roleGuard(['profesor'])],
+  loadComponent: () =>
+    import('./modules/dashboard/pages/profesor-dashboard.component').then(m => m.ProfesorDashboardComponent)
   },
   {
     path: 'mi-rendimiento',
@@ -26,5 +28,9 @@ export const routes: Routes = [
     redirectTo: 'login',
     pathMatch: 'full',
   },
+  {
+     path: 'no-autorizado',
+    loadComponent: () => import('./shared/pages/no-autorizado.component').then(m => m.NoAutorizadoComponent)
+  }
 ];
 

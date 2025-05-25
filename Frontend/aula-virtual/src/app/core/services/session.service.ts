@@ -40,6 +40,7 @@ export class SessionService {
         localStorage.setItem('refresh_token', resp.refresh);
 
         // Guarda el usuario y redirige por rol
+        console.log('Rol recibido:', resp.usuario.rol?.nombre); 
         this.setUsuario(resp.usuario);
         this.redireccionarPorRol(resp.usuario.rol?.nombre);
       })

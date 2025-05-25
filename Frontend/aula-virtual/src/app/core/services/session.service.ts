@@ -83,6 +83,10 @@ export class SessionService {
     this.router.navigate(['/login']);
   }
 
+    get usuarioSignal() {
+    return this.usuario;
+  }
+
   get currentUser() {
     return this.usuario();
   }

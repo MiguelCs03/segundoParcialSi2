@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { SessionService } from '../../../core/services/session.service';
+
 
 @Component({
   standalone: true,
@@ -16,9 +18,19 @@ import { RouterModule } from '@angular/router';
         <a routerLink="/configuracion" class="block py-2 px-3 rounded hover:bg-slate-700">⚙️ Configuración</a>
       </nav>
       <div class="p-4 border-t border-slate-700">
-        <button class="w-full text-left py-2 px-3 hover:bg-red-700 rounded">🔓 Cerrar sesión</button>
+       <button (click)="cerrarSesion()" class="w-full text-left py-2 px-3 hover:bg-red-700 rounded">
+  🔓 Cerrar sesión
+</button>
+
       </div>
     </aside>
   `
 })
-export class SidebarComponent {}
+export class SidebarComponent {
+    constructor(private session: SessionService) {}
+
+  cerrarSesion() {
+    console.log('✅ Cerrando sesión...');
+    this.session.logout();
+  }
+}

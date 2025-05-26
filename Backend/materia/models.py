@@ -1,6 +1,7 @@
 from django.db import models
 from usuarios.models import Usuario
 from actividad.models import Actividad
+from curso.models import Curso, Paralelo 
 
 
 class Nivel(models.Model):
@@ -30,9 +31,10 @@ class DetalleMateria(models.Model):
         help_text="Profesor asignado a la materia"
     )
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='detalles_materia')
+    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='detalles_materia')
     actividad = models.ForeignKey(Actividad, on_delete=models.SET_NULL, null=True, blank=True, related_name='detalles_materia')
     def __str__(self):
-        return f"{self.profesor} - {self.materia} - Actividad: {self.actividad} - Libreta: {self.libreta}"
+        return f"{self.profesor} - {self.materia} - Actividad: {self.actividad} - Libreta: {self.libreta.count()}"
 
 class Asistencia(models.Model):
     detalle_materia = models.ForeignKey(DetalleMateria, on_delete=models.CASCADE, related_name='asistencias')

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -14,7 +14,9 @@ import { CommonModule } from '@angular/common';
         <p class="text-sm text-gray-600">Predicción rendimiento: <span class="font-bold text-green-600">Alto</span></p>
       </div>
 
-      <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
+      <button
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
+        (click)="verDetalles()">
         Ver Detalles
       </button>
     </div>
@@ -22,4 +24,11 @@ import { CommonModule } from '@angular/common';
 })
 export class CourseCardComponent {
   @Input() curso: string = '';
+  @Input() detalleMateriaId!: number;
+
+  @Output() detalleClick = new EventEmitter<number>();
+
+  verDetalles() {
+    this.detalleClick.emit(this.detalleMateriaId);
+  }
 }

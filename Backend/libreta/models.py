@@ -13,6 +13,5 @@ class Libreta(models.Model):
     # materia = models.ForeignKey('materia.Materia', on_delete=models.CASCADE, related_name='libretas')
     # Si necesitas DetalleMateria:
     gestion = models.ForeignKey(Gestion, on_delete=models.CASCADE, related_name='libretas')
-    detalle_materia = models.ForeignKey(DetalleMateria, on_delete=models.CASCADE, related_name='libretas', null=True, blank=True)
     def __str__(self):
         return f"Libreta de {self.estudiante} - {self.gestion}"

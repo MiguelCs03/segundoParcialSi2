@@ -19,6 +19,12 @@ export const routes: Routes = [
     import('./modules/dashboard/pages/profesor-dashboard.component').then(m => m.ProfesorDashboardComponent)
   },
   {
+  path: 'profesor/materia/:id',
+  canActivate: [authGuard, roleGuard(['profesor'])],
+  loadComponent: () =>
+    import('./modules/dashboard/pages/materia-detalle.component').then(m => m.MateriaDetalleComponent)
+  },
+  {
     path: 'mi-rendimiento',
     redirectTo: 'login',
     pathMatch: 'full',

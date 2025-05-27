@@ -24,11 +24,14 @@ export const routes: Routes = [
   loadComponent: () =>
     import('./modules/dashboard/pages/materia-detalle.component').then(m => m.MateriaDetalleComponent)
   },
-  {
-    path: 'mi-rendimiento',
-    redirectTo: 'login',
-    pathMatch: 'full',
-  },
+ {
+  path: 'mi-rendimiento',
+  canActivate: [authGuard, roleGuard(['estudiante'])],
+  loadComponent: () =>
+    import('./modules/dashboard/pages/alumno-dashboard.component').then(m => m.AlumnoDashboardComponent)
+
+},
+
   {
     path: 'mi-hijo',
     redirectTo: 'login',

@@ -1,8 +1,7 @@
 from django.db import models
 from usuarios.models import Usuario
-from actividad.models import Actividad
+
 from curso.models import Curso, Paralelo
-from libreta.models import Libreta  # Importamos el modelo Libreta
 
 class Nivel(models.Model):
     OPCIONES_NIVEL = (
@@ -30,11 +29,9 @@ class DetalleMateria(models.Model):
     )
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='detalles_materia')
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='detalles_materia', null=True, blank=True)
-    actividad = models.ForeignKey(Actividad, on_delete=models.SET_NULL, null=True, blank=True, related_name='detalles_materia')
-    libreta = models.ForeignKey(Libreta, on_delete=models.SET_NULL, null=True, blank=True, related_name='detalles_materia')
-    
     def __str__(self):
-        return f"{self.profesor} - {self.materia} - Actividad: {self.actividad} - Libreta: {self.libreta}"
+        
+        return f"{self.profesor} - {self.materia} - Curso: {self.curso}"
 
 class Asistencia(models.Model):
     detalle_materia = models.ForeignKey(DetalleMateria, on_delete=models.CASCADE, related_name='asistencias')

@@ -15,6 +15,7 @@ export default class LoginComponent {
   codigo = '';
   password = '';
   error = '';
+  verPassword: boolean = false;
 
   constructor(private session: SessionService, private router: Router) {}
 

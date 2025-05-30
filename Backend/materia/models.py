@@ -34,7 +34,7 @@ class DetalleMateria(models.Model):
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='detalles_materia')
     actividad = models.ForeignKey(Actividad, on_delete=models.SET_NULL, null=True, blank=True, related_name='detalles_materia')
     def __str__(self):
-        return f"{self.profesor} - {self.materia} - Actividad: {self.actividad} - Libreta: {self.libreta.count()}"
+        return f"{self.profesor} - {self.materia} - Actividad: {self.actividad} "
 
 class Asistencia(models.Model):
     detalle_materia = models.ForeignKey(DetalleMateria, on_delete=models.CASCADE, related_name='asistencias')

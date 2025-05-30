@@ -48,6 +48,30 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
         return user
 
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        rol = validated_data.pop('rol', None)
+        groups = validated_data.pop('groups', None)
+        user_permissions = validated_data.pop('user_permissions', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if password:
+            instance.set_password(password)  # importante encriptar la contraseña al actualizar
+
+        if rol is not None:
+            instance.rol = rol
+
+        instance.save()
+
+        if groups is not None:
+            instance.groups.set(groups)
+
+        if user_permissions is not None:
+            instance.user_permissions.set(user_permissions)
+
+        return instance
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'codigo'

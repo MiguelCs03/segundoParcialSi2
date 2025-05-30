@@ -120,3 +120,14 @@ class CambiarContrasenaView(APIView):
         user.set_password(new_password)
         user.save()
         return Response({'detail': '¡Contraseña actualizada correctamente!'}, status=status.HTTP_200_OK)
+    
+class EstudiantesDelTutorView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tutor = request.user
+        # Obtener los estudiantes asociados al tutor
+        estudiantes = Usuario.objects.filter(tutor=tutor, estado=True).values(
+            'id', 'nombre', 'codigo', 'sexo', 'fecha_nacimiento'
+        )
+        return Response(list(estudiantes))

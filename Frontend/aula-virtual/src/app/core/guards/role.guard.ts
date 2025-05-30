@@ -7,10 +7,11 @@ export function roleGuard(allowedRoles: string[]): CanActivateFn {
     const session = inject(SessionService);
     const router = inject(Router);
 
-    const rol = session.role;
+    const rol = session.role?.toLowerCase();
 
-    if (session.isLoggedIn && rol && allowedRoles.includes(rol)) {
+    const allowed = allowedRoles.map(r => r.toLowerCase());
 
+    if (session.isLoggedIn && rol && allowed.includes(rol)) {
       return true;
     }
 

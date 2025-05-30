@@ -33,10 +33,11 @@ export const routes: Routes = [
 },
 
   {
-    path: 'mi-hijo',
-    redirectTo: 'login',
-    pathMatch: 'full',
-  },
+  path: 'mi-hijo',
+  canActivate: [authGuard, roleGuard(['tutor'])],
+  loadComponent: () => import('./modules/dashboard/pages/tutor-dashboard.component').then(m => m.TutorDashboardComponent),
+},
+
   {
      path: 'no-autorizado',
     loadComponent: () => import('./shared/pages/no-autorizado.component').then(m => m.NoAutorizadoComponent)

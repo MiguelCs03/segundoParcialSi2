@@ -3,7 +3,9 @@ from django.urls import path
 from .views import (
     NivelViewSet, MateriaViewSet, 
     DetalleMateriaViewSet, AsistenciaViewSet,
-    MateriasDelProfesorView  # 👈 importar la vista personalizada
+    MateriasDelProfesorView , # 👈 importar la vista personalizada
+    MateriasDelAlumnoView,
+    EstudiantesDeMateriaView
 )
 
 router = DefaultRouter()
@@ -16,5 +18,8 @@ urlpatterns = router.urls
 
 urlpatterns += [
     path('profesor/materias/', MateriasDelProfesorView.as_view(), name='materias-profesor'),
+    path('alumno/materias/', MateriasDelAlumnoView.as_view(), name='materias-alumno'),
+    path('profesor/materia/<int:detalle_id>/estudiantes/', EstudiantesDeMateriaView.as_view(), name='profesor-materia-estudiantes'),
+
 ]
 

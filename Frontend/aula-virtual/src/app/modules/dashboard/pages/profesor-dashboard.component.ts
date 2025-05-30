@@ -25,7 +25,7 @@ import { Router } from '@angular/router';
             *ngFor="let m of materias"
             [curso]="m.materia + ' - ' + m.curso + ' ' + m.paralelo"
             [detalleMateriaId]="m.detalle_id"
-            (detalleClick)="irADetalle(m.detalle_id)">
+            (detalleClick)="irADetalle($event)">
           </app-course-card>
         </div>
       </div>
@@ -42,6 +42,7 @@ export class ProfesorDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.profesorService.getMateriasConCurso().subscribe(data => {
+      console.log('Materias recibidas:', data);
       this.materias = data;
     });
   }

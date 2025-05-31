@@ -16,6 +16,14 @@ class Actividad(models.Model):
     fecha = models.DateField(auto_now_add=True)  # Fecha de creación automática
     detalle_materia = models.ForeignKey(DetalleMateria, on_delete=models.CASCADE, related_name='actividades')
     calificacion = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # Campo para la calificación
-
+    
     def __str__(self):
         return f"{self.nombre} - Calificación: {self.calificacion}"
+
+class EntregaTarea(models.Model):
+    actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='entregas')
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='entregas')
+    fecha_entrega = models.DateField(auto_now_add=True)
+    calificacion = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  
+    
+    

@@ -32,15 +32,27 @@ export const routes: Routes = [
 
 },
 
-  {
+{
   path: 'mi-hijo',
   canActivate: [authGuard, roleGuard(['tutor'])],
   loadComponent: () => import('./modules/dashboard/pages/tutor-dashboard.component').then(m => m.TutorDashboardComponent),
 },
+{
+  path: 'profesor/materia/:id/asistencia',
+  canActivate: [authGuard, roleGuard(['profesor'])],
+  loadComponent: () =>
+    import('./modules/dashboard/pages/asistencia.component').then(m => m.default)
+},
+{
+  path: 'profesor/materia/:id/reporte-asistencia',
+  loadComponent: () =>
+    import('./modules/dashboard/pages/reporte-asistencia.component').then(m => m.default),
+  canActivate: [authGuard, roleGuard(['profesor'])]
+},
+{
+ path: 'no-autorizado',
+ loadComponent: () => import('./shared/pages/no-autorizado.component').then(m => m.NoAutorizadoComponent)
+}
 
-  {
-     path: 'no-autorizado',
-    loadComponent: () => import('./shared/pages/no-autorizado.component').then(m => m.NoAutorizadoComponent)
-  }
 ];
 

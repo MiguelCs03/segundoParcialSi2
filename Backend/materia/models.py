@@ -38,6 +38,7 @@ class DetalleMateria(models.Model):
 
 class Asistencia(models.Model):
     detalle_materia = models.ForeignKey(DetalleMateria, on_delete=models.CASCADE, related_name='asistencias')
+    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='asistencias')
     fecha = models.DateField(auto_now_add=True)
     presente = models.BooleanField(default=False)
 

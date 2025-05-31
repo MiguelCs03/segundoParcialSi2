@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { SidebarComponent } from '../components/sidebar.component';
@@ -8,19 +8,35 @@ import { NgIf, NgFor } from '@angular/common';
 @Component({
   standalone: true,
   selector: 'app-materia-detalle',
-  imports: [CommonModule, HttpClientModule, SidebarComponent, NgIf, NgFor],
+  imports: [CommonModule, HttpClientModule, SidebarComponent, NgIf, NgFor,RouterModule],
   template: `
     <div class="flex min-h-screen">
       <app-sidebar></app-sidebar>
       <div class="flex-1 p-6 bg-gray-50">
         <div class="flex justify-between items-center mb-6">
           <h1 class="text-2xl font-bold text-slate-800">Detalle de la Materia</h1>
-          <button
-            class="text-sm px-3 py-1 border rounded text-blue-600 border-blue-600 hover:bg-blue-100"
-            (click)="volver()"
-          >
-            ← Volver
-          </button>
+
+          <div class="flex space-x-2">
+            <button
+              class="text-sm px-3 py-1 border rounded text-blue-600 border-blue-600 hover:bg-blue-100"
+              (click)="volver()"
+            >
+              ← Volver
+            </button>
+
+            <a
+              [routerLink]="['/profesor/materia', detalleId, 'asistencia']"
+              class="text-sm px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Tomar asistencia
+            </a>
+            <a
+             [routerLink]="['/profesor/materia', detalleId, 'reporte-asistencia']"
+              class="ml-2 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+              >
+              Ver reporte asistencia
+              </a>
+          </div>
         </div>
 
         <p class="text-gray-600 mb-4">ID del detalle materia: <strong>{{ detalleId }}</strong></p>

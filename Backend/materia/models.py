@@ -1,6 +1,5 @@
 from django.db import models
 from usuarios.models import Usuario
-
 from curso.models import Curso, Paralelo
 
 class Nivel(models.Model):
@@ -29,14 +28,15 @@ class DetalleMateria(models.Model):
     )
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='detalles_materia')
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='detalles_materia', null=True, blank=True)
+
     def __str__(self):
-        
         return f"{self.profesor} - {self.materia} - Curso: {self.curso}"
 
 class Asistencia(models.Model):
     detalle_materia = models.ForeignKey(DetalleMateria, on_delete=models.CASCADE, related_name='asistencias')
+    alumno = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='asistencias', help_text="Alumno relacionado con la asistencia")  # Nuevo campo
     fecha = models.DateField(auto_now_add=True)
     presente = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Asistencia en {self.detalle_materia} ({self.fecha})"
+        return f"Asistencia de {self.alumno} en {self.detalle_materia} ({self.fecha})"

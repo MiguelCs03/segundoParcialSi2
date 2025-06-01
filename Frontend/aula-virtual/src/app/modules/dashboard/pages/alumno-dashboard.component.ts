@@ -82,38 +82,40 @@ import { SidebarComponent } from '../components/sidebar.component';
 export class AlumnoDashboardComponent implements OnInit {
 
   resumen = {
-    promedio: 84.5,
-    asistencia: 92,
-    participacion: 87,
-    prediccion: 'Alto'
+    promedio: 'N/A',
+    asistencia: 0,
+    participacion: 0,
+    prediccion: 'N/A'
   };
 
   materias: any[] = [];
 
-  actividades = [
-    { materia: 'Matemáticas', titulo: 'Ejercicios de álgebra', estado: 'Pendiente' },
-    { materia: 'Lenguaje', titulo: 'Ensayo literario', estado: 'Entregado' },
-    { materia: 'Historia', titulo: 'Línea de tiempo', estado: 'Pendiente' }
-  ];
+  actividades: any[] = [];
+
 
   constructor(private alumnoService: AlumnoService) {}
 
-  ngOnInit() {
-    this.cargarMaterias();
-  }
+ ngOnInit() {
+  this.alumnoService.getResumenDashboard().subscribe({
+    next: (data) => {
+      this.resumen = {
+        promedio: 'N/A',
+        asistencia: data.porcentaje_asistencia,
+        participacion: data.porcentaje_participacion,
+        prediccion: 'N/A'
+      };
 
-  cargarMaterias() {
-    this.alumnoService.getMateriasPorAlumno().subscribe({
-      next: (data) => {
-        this.materias = data.map((m: any) => ({
-          nombre: m.materia,
-          profesor: m.profesor || 'Profesor no asignado',
-          promedio: 'N/A'
-        }));
-      },
-      error: (err) => {
-        console.error('Error cargando materias', err);
-      }
-    });
-  }
+      this.materias = data.materias.map((m: any) => ({
+        nombre: m.nombre,
+        profesor: m.profesor,
+        promedio: m.promedio || 'N/A'
+      }));
+
+      this.actividades = data.actividades_recientes;
+    },
+    error: (err) => {
+      console.error('Error al cargar resumen del alumno', err);
+    }
+  });
+}
 }

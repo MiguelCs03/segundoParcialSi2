@@ -21,4 +21,11 @@ export class AlumnoService {
     const headers = this.getHeaders();
     return this.http.get<any[]>(`${this.apiUrl}/alumno/materias/`, { headers });
   }
+
+  getResumenDashboard(): Observable<any> {
+  const token = localStorage.getItem('access_token');
+  const headers = { Authorization: `Bearer ${token}` };
+  return this.http.get<any>('http://127.0.0.1:8000/api/alumno/resumen/', { headers });
+}
+
 }

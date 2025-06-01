@@ -10,6 +10,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from libreta.models import Libreta
+from actividad.models import Actividad, EntregaTarea
+from materia.models import DetalleMateria,Asistencia
+from datetime import datetime, timedelta
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all()
@@ -131,3 +135,55 @@ class EstudiantesDelTutorView(APIView):
             'id', 'nombre', 'codigo', 'sexo', 'fecha_nacimiento'
         )
         return Response(list(estudiantes))
+
+class ResumenAlumnoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        estudiante = request.user
+
+        # Obtener materias actuales
+        libretas = Libreta.objects.filter(estudiante=estudiante).select_related('detalle_materia__materia', 'detalle_materia__profesor')
+
+        materias = []
+        detalle_ids = []
+        for l in libretas:
+            detalle = l.detalle_materia
+            materias.append({
+                "nombre": detalle.materia.nombre,
+                "profesor": detalle.profesor.nombre if detalle.profesor else "N/A",
+                "promedio": None  # aún no calculamos promedio
+            })
+            detalle_ids.append(detalle.id)
+
+        # Obtener porcentaje de asistencia
+        total_asistencias = Asistencia.objects.filter(detalle_materia_id__in=detalle_ids, estudiante=estudiante).count()
+        asistencias_presentes = Asistencia.objects.filter(detalle_materia_id__in=detalle_ids, estudiante=estudiante, presente=True).count()
+        porcentaje_asistencia = round((asistencias_presentes / total_asistencias) * 100, 1) if total_asistencias > 0 else 0
+
+        # Obtener actividades recientes (últimos 7 días)
+        recientes = []
+        hace_una_semana = datetime.now() - timedelta(days=7)
+
+        actividades = Actividad.objects.filter(
+            detalles_actividad__detalle_materia_id__in=detalle_ids,
+            fechaCreacion__gte=hace_una_semana  # ✅ nombre correcto
+        ).distinct().order_by('-fechaCreacion')[:5]  # ✅ corregido
+
+        for act in actividades:
+            entrega = EntregaTarea.objects.filter(actividad=act, usuario=estudiante).first()
+            estado = "Entregado" if entrega and entrega.entregado else "Pendiente"
+            nombre_materia = act.detalles_actividad.first().detalle_materia.materia.nombre if act.detalles_actividad.exists() else "Desconocida"
+
+            recientes.append({
+                "materia": nombre_materia,
+                "titulo": act.nombre,
+                "estado": estado
+            })
+
+        return Response({
+            "porcentaje_asistencia": porcentaje_asistencia,
+            "porcentaje_participacion": porcentaje_asistencia,  # temporal
+            "materias": materias,
+            "actividades_recientes": recientes
+        })

@@ -12,8 +12,8 @@ import { SessionService } from '../../../core/services/session.service';
     <aside class="w-64 h-screen bg-slate-900 text-white flex flex-col">
       <div class="text-xl font-bold p-4 border-b border-slate-700">Dashboard</div>
       <nav class="flex-1 px-4 py-6">
-        <a routerLink="/profesor" class="block py-2 px-3 rounded hover:bg-slate-700">📊 Dashboard</a>
-        <a routerLink="/cursos" class="block py-2 px-3 rounded hover:bg-slate-700">📚 Cursos</a>
+        <a routerLink="/profesor" class="block py-2 px-3 rounded hover:bg-slate-700">📚 Cursos</a>
+        <a routerLink="/cursos" class="block py-2 px-3 rounded hover:bg-slate-700">📊 Dashboard</a>
         <a routerLink="/notas" class="block py-2 px-3 rounded hover:bg-slate-700">📝 Calificaciones</a>
         <a routerLink="/configuracion" class="block py-2 px-3 rounded hover:bg-slate-700">⚙️ Configuración</a>
       </nav>

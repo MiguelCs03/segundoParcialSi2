@@ -7,7 +7,8 @@ from .views import (
     CrearActividadConDetalleView,
     ListarActividadesPorMateriaView,
     RegistrarEntregasActividadView,
-    ListarEntregasPorActividadView
+    ListarEntregasPorActividadView,
+    ReporteEntregasView
 )
 
 router = DefaultRouter()
@@ -24,4 +25,6 @@ urlpatterns = [
     path('profesor/materia/<int:detalle_id>/actividades/', ListarActividadesPorMateriaView.as_view(), name='listar-actividades-por-materia'),
     path('actividades/<int:actividad_id>/registrar-entregas/', RegistrarEntregasActividadView.as_view(), name='registrar_entregas'),
     path('profesor/materia/<int:detalle_id>/actividad/<int:actividad_id>/entregas/',ListarEntregasPorActividadView.as_view(),name='listar_entregas_por_actividad'),
+    path('profesor/materia/<int:detalle_id>/reporte-entregas/',ReporteEntregasView.as_view(),name='reporte_entregas'),
+    
 ]

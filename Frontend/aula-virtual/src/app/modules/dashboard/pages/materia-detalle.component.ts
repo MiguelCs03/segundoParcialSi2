@@ -71,6 +71,9 @@ import { RouterModule } from '@angular/router';
             >
               Crear Actividad
             </button>
+            <button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" (click)="irAReporteEntregas()">
+              Ver Reporte Entregas
+             </button>
           </div>
 
           <div *ngIf="actividades.length > 0" class="space-y-2">
@@ -139,6 +142,9 @@ export class MateriaDetalleComponent implements OnInit {
 
   irACalificar(actividadId: number) {
     this.router.navigate(['/profesor/materia', this.detalleId, 'actividad', actividadId, 'calificar']);
+  }
+  irAReporteEntregas() {
+  this.router.navigate(['/profesor/materia', this.detalleId, 'reporte-entregas']);
   }
 
   volver() {

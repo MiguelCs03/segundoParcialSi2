@@ -60,6 +60,12 @@ export const routes: Routes = [
   canActivate: [authGuard, roleGuard(['profesor'])],
   loadComponent: () =>
     import('./modules/dashboard/pages/calificar-actividad.component').then(m => m.CalificarActividadComponent)
+},
+{
+  path: 'profesor/materia/:id/reporte-entregas',
+  canActivate: [authGuard, roleGuard(['profesor'])],
+  loadComponent: () =>
+    import('./modules/dashboard/pages/reporte-entregas.component').then(m => m.ReporteEntregasComponent)
 }
 ,
 {

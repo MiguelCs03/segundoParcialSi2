@@ -149,3 +149,46 @@ class ListarEntregasPorActividadView(APIView):
             })
 
         return Response(resultado)
+    
+class ReporteEntregasView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, detalle_id):
+        profesor = request.user
+
+        try:
+            detalle = DetalleMateria.objects.get(id=detalle_id, profesor=profesor)
+        except DetalleMateria.DoesNotExist:
+            return Response({'error': 'No autorizado'}, status=403)
+
+        actividades = Actividad.objects.filter(detalles_actividad__detalle_materia=detalle).distinct()
+        libretas = Libreta.objects.filter(detalle_materia=detalle).select_related('estudiante')
+
+        resultado = []
+
+        for libreta in libretas:
+            estudiante = libreta.estudiante
+
+            entregas_por_actividad = []
+            for actividad in actividades:
+                entrega = EntregaTarea.objects.filter(actividad=actividad, usuario=estudiante).first()
+
+                entregas_por_actividad.append({
+                    "actividad": actividad.nombre,
+                    "entregado": entrega.entregado if entrega else False,
+                    "fecha_entrega": entrega.fecha_entrega.isoformat() if entrega and entrega.fecha_entrega else None,
+                    "calificacion": entrega.calificacion if entrega else None
+                })
+
+            resultado.append({
+                "id": estudiante.id,
+                "nombre": estudiante.nombre,
+                "entregas": entregas_por_actividad
+            })
+
+        actividades_nombres = [a.nombre for a in actividades]
+
+        return Response({
+            "estudiantes": resultado,
+            "actividades": actividades_nombres
+        })

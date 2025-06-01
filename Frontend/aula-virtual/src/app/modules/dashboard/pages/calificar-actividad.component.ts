@@ -10,7 +10,15 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, HttpClientModule, FormsModule],
   template: `
     <div class="p-6 max-w-4xl mx-auto bg-white rounded shadow">
-      <h2 class="text-2xl font-bold mb-4">Calificar Entregas</h2>
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Calificar Entregas</h2>
+        <button
+          (click)="volver()"
+          class="px-4 py-2 border rounded hover:bg-gray-100"
+        >
+          ← Volver
+        </button>
+      </div>
 
       <table class="w-full border-collapse border border-gray-300 mb-4">
         <thead>
@@ -103,5 +111,9 @@ export class CalificarActividadComponent implements OnInit {
         next: () => alert('Calificaciones guardadas correctamente'),
         error: (err) => console.error('Error al guardar calificaciones:', err),
       });
+  }
+
+  volver() {
+    window.history.back();
   }
 }

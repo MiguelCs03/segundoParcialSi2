@@ -21,6 +21,7 @@ class EntregaTarea(models.Model):
     actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='entregas')
     usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='entregas')
     fecha_entrega = models.DateField(auto_now_add=True)
+    entregado = models.BooleanField(default=False) 
     calificacion = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
 class DetalleActividad(models.Model):

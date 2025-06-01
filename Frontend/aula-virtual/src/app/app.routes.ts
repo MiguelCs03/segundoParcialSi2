@@ -50,6 +50,19 @@ export const routes: Routes = [
   canActivate: [authGuard, roleGuard(['profesor'])]
 },
 {
+  path: 'profesor/materia/:id/crear-actividad',
+  canActivate: [authGuard, roleGuard(['profesor'])],
+  loadComponent: () =>
+    import('./modules/dashboard/pages/crear-actividad.component').then(m => m.CrearActividadComponent),
+},
+{
+  path: 'profesor/materia/:id/actividad/:actividadId/calificar',
+  canActivate: [authGuard, roleGuard(['profesor'])],
+  loadComponent: () =>
+    import('./modules/dashboard/pages/calificar-actividad.component').then(m => m.CalificarActividadComponent)
+}
+,
+{
  path: 'no-autorizado',
  loadComponent: () => import('./shared/pages/no-autorizado.component').then(m => m.NoAutorizadoComponent)
 }

@@ -2,13 +2,21 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { provideHttpClient } from '@angular/common/http'; // ✅ AÑADIR ESTO
+import { provideHttpClient, HTTP_INTERCEPTORS } from '@angular/common/http'; // ya lo tienes
+import { TokenInterceptor } from './core/interceptors/token.interceptor'; // importa tu interceptor
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(), 
-    provideClientHydration(withEventReplay())
+    provideHttpClient(),
+    provideClientHydration(withEventReplay()),
+
+    // Aquí agregas el interceptor
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: TokenInterceptor,
+      multi: true,
+    },
   ]
 };

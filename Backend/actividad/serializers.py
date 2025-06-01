@@ -1,8 +1,5 @@
 from rest_framework import serializers
-from .models import (
-    Dimension, Actividad,
-    DetalleActividad, 
-)
+from .models import Dimension, Actividad, DetalleActividad, EntregaTarea
 
 class DimensionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,4 +14,9 @@ class ActividadSerializer(serializers.ModelSerializer):
 class DetalleActividadSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetalleActividad
+        fields = '__all__'
+
+class EntregaTareaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EntregaTarea
         fields = '__all__'

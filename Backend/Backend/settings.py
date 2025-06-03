@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'libreta',
     'actividad',
     'drf_yasg',
+    'notificaciones',
     # 'rest_framework.authtoken',  # Uncomment if you are using token authentication
     # Add your apps here
 ]

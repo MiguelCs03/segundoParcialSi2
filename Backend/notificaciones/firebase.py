@@ -11,7 +11,7 @@ def initialize_firebase():
         # Cargar credenciales desde archivo JSON
         try:
             # Usar ruta absoluta al archivo de credenciales
-            cred_path = os.path.join(settings.BASE_DIR, 'firebase-credentials.json')
+            cred_path = os.path.join(settings.BASE_DIR, 'FIREBASE_CREDENTIALS')
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
             print("Firebase inicializado correctamente con archivo de credenciales")

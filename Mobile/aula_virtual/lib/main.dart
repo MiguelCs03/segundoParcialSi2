@@ -2,13 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'core/services/auth_service.dart';
+import 'core/services/notification_service.dart';  // 🔥 Agregar
 import 'features/auth/views/login_screen.dart';
 import 'features/profesor/views/profesor_dashboard.dart';
 import 'features/estudiante/views/estudiante_dashboard.dart';
 import 'features/tutor/views/tutor_dashboard.dart';
 import 'shared/theme/app_theme.dart';
 
-void main() {
+void main() async {
+  // 🔥 Asegurar que Flutter esté inicializado
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 🔥 Inicializar Firebase y notificaciones
+  try {
+    await NotificationService.initialize();
+    print("✅ Firebase y notificaciones inicializados");
+  } catch (e) {
+    print("❌ Error inicializando Firebase: $e");
+  }
+  
   runApp(MyApp());
 }
 
@@ -17,7 +29,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final authService = AuthService();
+            // 🔥 Inicializar el servicio de auth al crear
+            authService.init();
+            return authService;
+          }
+        ),
       ],
       child: Consumer<AuthService>(
         builder: (context, auth, _) {

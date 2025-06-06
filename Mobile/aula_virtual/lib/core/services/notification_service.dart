@@ -11,34 +11,33 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   
   static Future<void> initialize() async {
+  // ✅ Verifica antes de inicializar
+  if (Firebase.apps.isEmpty) {
     try {
-      // 🔥 Inicializar Firebase Core
       await Firebase.initializeApp(
         options: const FirebaseOptions(
-          apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',  // Tu API Key
-          appId: '1:123456789:android:abcdefxxxxxxxxxxxxxxxx',  // Tu App ID
-          messagingSenderId: '123456789',  // Tu Sender ID
-          projectId: 'colegio-cec69',  // Tu Project ID
+          apiKey: 'AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+          appId: '1:123456789:android:abcdefxxxxxxxxxxxxxxxx',
+          messagingSenderId: '123456789',
+          projectId: 'colegio-cec69',
         ),
       );
       print("✅ Firebase Core inicializado");
-      
-      // Solicitar permisos
-      await _requestPermissions();
-      
-      // Configurar notificaciones locales
-      await _initializeLocalNotifications();
-      
-      // Configurar handlers de Firebase
-      _configureFirebaseHandlers();
-      
-      // Obtener y guardar token FCM
-      await _getFCMToken();
-      
     } catch (e) {
       print("❌ Error inicializando Firebase: $e");
     }
+  } else {
+    print("ℹ Firebase ya estaba inicializado");
   }
+
+  // ✅ Esto se ejecuta siempre, sin importar si Firebase ya estaba iniciado
+  await _requestPermissions();
+  await _initializeLocalNotifications();
+  _configureFirebaseHandlers();
+  await _getFCMToken();
+}
+
+
   
   static Future<void> _requestPermissions() async {
     try {
@@ -141,24 +140,25 @@ class NotificationService {
   }
   
   static Future<void> _getFCMToken() async {
-    try {
-      String? token = await _firebaseMessaging.getToken();
-      if (token != null) {
-        print('🔑 FCM Token obtenido: ${token.substring(0, 20)}...');
-        await _sendTokenToServer(token);
-      } else {
-        print('❌ No se pudo obtener el FCM token');
-      }
-    } catch (e) {
-      print('❌ Error obteniendo FCM token: $e');
+  try {
+    String? token = await _firebaseMessaging.getToken();
+    if (token != null) {
+      print('🔑 FCM Token completo: $token'); // 👈 AQUÍ SE MUESTRA TODO
+      await _sendTokenToServer(token);
+    } else {
+      print('❌ No se pudo obtener el FCM token');
     }
+  } catch (e) {
+    print('❌ Error obteniendo FCM token: $e');
   }
+}
+
   
   static Future<void> _sendTokenToServer(String token) async {
     try {
       final accessToken = await StorageUtil.getAccessToken();
       if (accessToken == null) {
-        print('⚠️ No hay token de acceso, no se puede enviar FCM token');
+        print('⚠ No hay token de acceso, no se puede enviar FCM token');
         return;
       }
       

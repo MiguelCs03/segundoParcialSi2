@@ -1,81 +1,129 @@
 import firebase_admin
 from firebase_admin import credentials, messaging
 import os
+import json
 from django.conf import settings
+import requests
 
-# Configuración de Firebase
-FIREBASE_CONFIG = {
-  "apiKey": "AIzaSyBdj6MtuiqYZDljJfss4KuiDQWRvqFONE8",
-  "authDomain": "colegio-cec69.firebaseapp.com",
-  "projectId": "colegio-cec69",
-  "storageBucket": "colegio-cec69.firebasestorage.app",
-  "messagingSenderId": "913551225849",
-  "appId": "1:913551225849:web:6f832e42d19b5f9b7a0328"
-}
-
-# Inicializar Firebase Admin SDK
-try:
-    # Intentar inicializar con el archivo de credenciales
-    cred_path = os.path.join(settings.BASE_DIR, 'firebase-credentials.json')
-    
-    if os.path.exists(cred_path):
-        # Si el archivo existe, usarlo para la inicialización
-        cred = credentials.Certificate(cred_path)
-        firebase_app = firebase_admin.initialize_app(cred)
-        print("Firebase inicializado correctamente con credenciales")
-    else:
-        # Si no existe el archivo, usar inicialización simplificada
-        print("Archivo de credenciales no encontrado, usando inicialización simplificada")
-        firebase_app = firebase_admin.initialize_app()
-        print("Firebase inicializado en modo simplificado")
-        
-except ValueError:
-    # Si ya está inicializado
-    firebase_app = firebase_admin.get_app()
-    print("Firebase ya estaba inicializado")
-except Exception as e:
-    print(f"Error al inicializar Firebase: {e}")
+# Verificar si Firebase ya está inicializado
+def initialize_firebase():
+    if not firebase_admin._apps:
+        # Cargar credenciales desde archivo JSON
+        try:
+            # Usar ruta absoluta al archivo de credenciales
+            cred_path = os.path.join(settings.BASE_DIR, 'firebase-credentials.json')
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            print("Firebase inicializado correctamente con archivo de credenciales")
+        except Exception as e:
+            print(f"Error al inicializar Firebase: {e}")
+            return False
+    return True
 
 def enviar_notificacion(token, titulo, mensaje, datos=None):
     """
-    Envía una notificación push a un dispositivo específico
+    Enviar notificación a un solo token FCM
     """
+    # Inicializar Firebase si aún no se ha hecho
+    if not initialize_firebase():
+        return {"success": False, "error": "No se pudo inicializar Firebase"}
+    
+    # Verificar si es un token de prueba
+    if token.startswith('token-prueba-'):
+        return {
+            "success": True, 
+            "message_id": f"simulated-{token[:15]}",
+            "simulation": True
+        }
+    
+    # Asegurar que datos sea un diccionario
     if datos is None:
         datos = {}
-        
-    mensaje_notificacion = messaging.Message(
-        notification=messaging.Notification(
-            title=titulo,
-            body=mensaje,
-        ),
-        data=datos,
-        token=token,
-    )
+    
+    # IMPORTANTE: Duplicar título y mensaje en datos para garantizar entrega
+    datos['title'] = titulo
+    datos['body'] = mensaje
+    datos['click_action'] = 'FLUTTER_NOTIFICATION_CLICK'  # Importante para dispositivos móviles
     
     try:
-        response = messaging.send(mensaje_notificacion)
-        return {"success": True, "response": response}
+        # Mensaje de notificación sin el campo webpush.fcm_options.link que causa el error
+        mensaje_fcm = messaging.Message(
+            token=token,
+            notification=messaging.Notification(
+                title=titulo,
+                body=mensaje,
+            ),
+            data=datos,
+            android=messaging.AndroidConfig(
+                priority='high',
+                notification=messaging.AndroidNotification(
+                    sound='default',
+                    priority='high',
+                    channel_id='high_importance_channel'
+                )
+            ),
+            webpush=messaging.WebpushConfig(
+                notification=messaging.WebpushNotification(
+                    title=titulo,
+                    body=mensaje,
+                    icon='/favicon.ico'
+                )
+                # Quitamos el campo fcm_options que causa el problema
+            )
+        )
+        
+        # Enviar mensaje
+        response = messaging.send(mensaje_fcm)
+        return {"success": True, "message_id": response}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 def enviar_notificacion_multiple(tokens, titulo, mensaje, datos=None):
     """
-    Envía notificaciones push a múltiples dispositivos
+    Enviar notificación a múltiples tokens FCM
     """
-    if datos is None:
-        datos = {}
-        
-    mensaje_multicast = messaging.MulticastMessage(
-        notification=messaging.Notification(
-            title=titulo,
-            body=mensaje,
-        ),
-        data=datos,
-        tokens=tokens,
-    )
+    # Inicializar Firebase si aún no se ha hecho
+    if not initialize_firebase():
+        return {"success": False, "error": "No se pudo inicializar Firebase"}
     
+    # Verificar tokens válidos
+    if not tokens:
+        return {"success": False, "error": "No se proporcionaron tokens"}
+    
+    # Alternativa: Usar HTTP v1 API directamente si tenemos problemas con el SDK
     try:
-        response = messaging.send_multicast(mensaje_multicast)
-        return {"success": True, "response": response}
+        # Crear notificación multicast
+        mensajes_multicast = [
+            messaging.Message(
+                token=token,
+                notification=messaging.Notification(
+                    title=titulo,
+                    body=mensaje
+                ),
+                data=datos or {}
+            ) for token in tokens
+        ]
+        
+        # Enviar en batch (máximo 500 mensajes por batch)
+        if len(mensajes_multicast) <= 500:
+            respuesta = messaging.send_all(mensajes_multicast)
+            return {
+                "success": respuesta.success_count > 0,
+                "success_count": respuesta.success_count,
+                "failure_count": respuesta.failure_count,
+            }
+        else:
+            # Para más de 500 tokens, dividir en batches
+            resultados = {"success": False, "success_count": 0, "failure_count": 0}
+            for i in range(0, len(mensajes_multicast), 500):
+                batch = mensajes_multicast[i:i+500]
+                respuesta = messaging.send_all(batch)
+                resultados["success_count"] += respuesta.success_count
+                resultados["failure_count"] += respuesta.failure_count
+            
+            resultados["success"] = resultados["success_count"] > 0
+            return resultados
+            
     except Exception as e:
         return {"success": False, "error": str(e)}
+

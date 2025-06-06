@@ -18,43 +18,94 @@ class DispositivoTokenViewSet(viewsets.ModelViewSet):
         serializer.save(usuario=self.request.user)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])  # Comentado para pruebas
 def registrar_token(request):
-    """Registrar un token de dispositivo para el usuario"""
+    """Registrar token de dispositivo (sin autenticación para pruebas)"""
     token = request.data.get('token')
     
     if not token:
-        return Response({"error": "Se requiere un token"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Token no proporcionado"}, status=status.HTTP_400_BAD_REQUEST)
     
-    # Crear o actualizar el token
-    obj, created = DispositivoToken.objects.update_or_create(
-        usuario=request.user,
-        token=token,
-        defaults={'activo': True}
-    )
+    # Para pruebas, si no hay usuario autenticado, usar un usuario existente
+    if request.user.is_anonymous:
+        # Importa el modelo de Usuario
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        try:
+            # Usar un usuario existente
+            usuario = User.objects.first()
+            if not usuario:
+                return Response({"error": "No hay usuarios en el sistema"}, 
+                              status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({"error": f"Error: {str(e)}"}, 
+                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    else:
+        usuario = request.user
     
-    return Response({
-        "success": True,
-        "created": created
-    }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+    # Buscar si ya existe el token
+    token_existente = DispositivoToken.objects.filter(token=token).first()
+    
+    if token_existente:
+        # Actualizar token existente
+        token_existente.usuario = usuario
+        token_existente.activo = True
+        token_existente.save()
+        mensaje = "Token actualizado correctamente"
+    else:
+        # Crear nuevo token - SIN incluir 'dispositivo'
+        DispositivoToken.objects.create(
+            usuario=usuario,
+            token=token,
+            activo=True
+        )
+        mensaje = "Token registrado correctamente"
+    
+    return Response({"mensaje": mensaje}, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])  # Comentado para pruebas
 def enviar_prueba(request):
-    """Enviar notificación de prueba al usuario"""
-    tokens = DispositivoToken.objects.filter(
-        usuario=request.user,
-        activo=True
-    ).values_list('token', flat=True)
+    """Enviar notificación de prueba"""
+    # Verificar si hay un token específico para pruebas
+    token = request.data.get('token')
     
-    if not tokens:
-        return Response({"error": "No hay dispositivos registrados"}, status=status.HTTP_404_NOT_FOUND)
+    # Si se proporciona un token específico, usarlo en lugar de buscar en la base de datos
+    if token:
+        # Enviar directamente al token proporcionado
+        titulo = request.data.get('title', "Notificación de prueba")
+        mensaje = request.data.get('message', "¡Esta es una notificación de prueba enviada desde el servidor!")
+        datos_extra = request.data.get('data', {})
+        
+        try:
+            # Enviar notificación individual
+            resultado = enviar_notificacion(token, titulo, mensaje, datos_extra)
+            return Response(resultado)
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
-    resultado = enviar_notificacion_multiple(
-        list(tokens),
-        "Notificación de prueba",
-        "¡Esta es una notificación de prueba enviada desde el servidor!"
-    )
-    
-    return Response(resultado)
+    # Si no hay token proporcionado y el usuario está autenticado, buscar en base de datos
+    if not request.user.is_anonymous:
+        tokens = DispositivoToken.objects.filter(
+            usuario=request.user,
+            activo=True
+        ).values_list('token', flat=True)
+        
+        if not tokens:
+            return Response({"error": "No hay dispositivos registrados"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Obtener parámetros o usar valores predeterminados
+        titulo = request.data.get('title', "Notificación de prueba")
+        mensaje = request.data.get('message', "¡Esta es una notificación de prueba enviada desde el servidor!")
+        datos_extra = request.data.get('data', {})
+        
+        try:
+            resultado = enviar_notificacion_multiple(list(tokens), titulo, mensaje, datos_extra)
+            return Response(resultado)
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    else:
+        # Usuario no autenticado y no proporcionó token
+        return Response({"error": "Debe proporcionar un token o autenticarse"}, status=status.HTTP_400_BAD_REQUEST)
 # Create your views here.

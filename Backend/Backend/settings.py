@@ -41,18 +41,20 @@ INSTALLED_APPS = [
     'libreta',
     'actividad',
     'drf_yasg',
-    'notificaciones',
+    'notificaciones',  
+     'prediccion_notas',
     # 'rest_framework.authtoken',  # Uncomment if you are using token authentication
     # Add your apps here
 ]
 AUTH_USER_MODEL = 'usuarios.Usuario'
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',  # Debe ir antes de AuthenticationMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Requerido para admin
+    'django.contrib.messages.middleware.MessageMiddleware',  # Requerido para admin
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 REST_FRAMEWORK = {
@@ -139,3 +141,47 @@ AUTHENTICATION_BACKENDS = [
     'usuarios.backends.CodigoBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+# En MIDDLEWARE asegúrate de tener:
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Este debe estar antes de CommonMiddleware
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',  # Debe ir antes de AuthenticationMiddleware
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Requerido para admin
+    'django.contrib.messages.middleware.MessageMiddleware',  # Requerido para admin
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# Agrega estas configuraciones
+CORS_ALLOW_ALL_ORIGINS = True  # Solo para desarrollo
+# Para producción, usa algo como:
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:8080",
+#     "http://127.0.0.1:8080",
+# ]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+   
+]
+
+FIREBASE_CREDENTIALS = os.path.join(BASE_DIR, 'firebase-credentials.json')

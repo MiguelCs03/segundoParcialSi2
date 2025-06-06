@@ -4,3 +4,4 @@ dist/
 
 # Archivos de entorno sensibles
 .env
+.firebase-credentials.json

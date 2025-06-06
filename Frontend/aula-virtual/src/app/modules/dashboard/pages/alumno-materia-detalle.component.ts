@@ -1,13 +1,22 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NgFor, NgClass, NgIf, DatePipe } from '@angular/common'; // 👈 Agregar DatePipe
+import { NgFor, NgClass, NgIf } from '@angular/common';
 import { AlumnoService } from '../../../core/services/alumno.service';
 import { SidebarComponent } from '../components/sidebar.component';
+import { AsistenciaChartComponent } from '../components/asistencia-chart.component';
+
+// 👈 Definir interfaces para mejor tipado
+interface Tab {
+  id: string;
+  label: string;
+  icon: string;
+  badge: string | null; // 👈 Permitir string o null
+}
 
 @Component({
   selector: 'app-alumno-materia-detalle',
   standalone: true,
-  imports: [NgFor, NgClass, NgIf, SidebarComponent], // 👈 Agregar DatePipe
+  imports: [NgFor, NgClass, NgIf, SidebarComponent, AsistenciaChartComponent],
   template: `
     <div class="flex min-h-screen">
       <!-- Sidebar -->
@@ -21,169 +30,215 @@ import { SidebarComponent } from '../components/sidebar.component';
           <div>
             <button 
               (click)="volver()" 
-              class="flex items-center text-blue-600 hover:text-blue-800 mb-2">
+              class="flex items-center text-blue-600 hover:text-blue-800 mb-2 transition-colors">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
               </svg>
               Volver al Dashboard
             </button>
             <h1 class="text-3xl font-bold text-gray-800">{{ detalleMateria.nombre || 'Cargando...' }}</h1>
+            <p class="text-gray-600">Profesor: {{ detalleMateria.profesor }}</p>
           </div>
         </div>
 
         <!-- Loading -->
         <div *ngIf="cargando" class="flex justify-center items-center my-10">
           <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
+          <p class="ml-4 text-lg text-gray-600">Cargando información...</p>
         </div>
 
         <!-- Error -->
-        <div *ngIf="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
-          <p>{{ error }}</p>
+        <div *ngIf="error" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg">
+          <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            <p>{{ error }}</p>
+          </div>
         </div>
 
-        <!-- Contenido principal -->
+        <!-- Contenido principal con pestañas -->
         <div *ngIf="!cargando && !error">
           
-          <!-- 1. Información General -->
-          <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Información General</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p class="text-gray-600 font-medium">Materia:</p>
-                <p class="text-lg font-semibold">{{ detalleMateria.nombre }}</p>
-              </div>
-              <div>
-                <p class="text-gray-600 font-medium">Profesor:</p>
-                <p class="text-lg font-semibold">{{ detalleMateria.profesor }}</p>
-              </div>
-              <div>
-                <p class="text-gray-600 font-medium">Promedio General:</p>
-                <p class="text-2xl font-bold text-blue-600">{{ detalleMateria.promedio }}</p>
-              </div>
+          <!-- Resumen rápido en tarjetas -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
+              <p class="text-gray-600 text-sm font-medium">Promedio General</p>
+              <p class="text-2xl font-bold text-blue-600">{{ detalleMateria.promedio }}</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
+              <p class="text-gray-600 text-sm font-medium">Asistencia</p>
+              <p class="text-2xl font-bold text-green-600">{{ asistencia.porcentaje }}%</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-purple-500">
+              <p class="text-gray-600 text-sm font-medium">Actividades</p>
+              <p class="text-2xl font-bold text-purple-600">{{ actividades.length }}</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+              <p class="text-gray-600 text-sm font-medium">Clases Totales</p>
+              <p class="text-2xl font-bold text-yellow-600">{{ asistencia.total_clases }}</p>
             </div>
           </div>
 
-          <!-- 2. Lista de Actividades -->
-          <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Actividades Asignadas</h2>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Entrega</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nota</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr *ngFor="let actividad of actividades" class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ actividad.titulo }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ formatearFecha(actividad.fecha_entrega) }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                            [ngClass]="{
-                              'bg-green-100 text-green-800': actividad.estado === 'Entregado',
-                              'bg-yellow-100 text-yellow-800': actividad.estado === 'Pendiente',
-                              'bg-red-100 text-red-800': actividad.estado === 'Vencido'
-                            }">
-                        {{ actividad.estado }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span *ngIf="actividad.nota !== null" class="font-semibold"
-                            [ngClass]="{
-                              'text-green-600': actividad.nota >= 80,
-                              'text-yellow-600': actividad.nota >= 60 && actividad.nota < 80,
-                              'text-red-600': actividad.nota < 60
-                            }">
-                        {{ actividad.nota }}
-                      </span>
-                      <span *ngIf="actividad.nota === null" class="text-gray-400">Sin calificar</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 3. Asistencia por Materia -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Sistema de Pestañas -->
+          <div class="bg-white rounded-lg shadow-lg">
             
-            <!-- Resumen de Asistencia -->
-            <div class="bg-white rounded-lg shadow p-6">
-              <h2 class="text-2xl font-semibold mb-4 text-gray-800">Asistencia</h2>
-              <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Total de clases:</span>
-                  <span class="font-semibold text-lg">{{ asistencia.total_clases }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Clases asistidas:</span>
-                  <span class="font-semibold text-lg text-green-600">{{ asistencia.clases_asistidas }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Clases perdidas:</span>
-                  <span class="font-semibold text-lg text-red-600">{{ asistencia.clases_perdidas }}</span>
-                </div>
-                <div class="border-t pt-4">
-                  <div class="flex justify-between items-center">
-                    <span class="text-gray-600 font-medium">Porcentaje de asistencia:</span>
-                    <span class="text-2xl font-bold"
-                          [ngClass]="{
-                            'text-green-600': asistencia.porcentaje >= 80,
-                            'text-yellow-600': asistencia.porcentaje >= 60 && asistencia.porcentaje < 80,
-                            'text-red-600': asistencia.porcentaje < 60
-                          }">
-                      {{ asistencia.porcentaje }}%
+            <!-- Navegación de pestañas -->
+            <div class="border-b border-gray-200">
+              <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                <button
+                  *ngFor="let tab of tabs; trackBy: trackByTabId"
+                  (click)="cambiarTab(tab.id)"
+                  [class]="getTabClass(tab.id)"
+                  class="py-4 px-1 font-medium text-sm transition-all duration-200 border-b-2 focus:outline-none">
+                  <div class="flex items-center space-x-2">
+                    <span [innerHTML]="tab.icon"></span>
+                    <span>{{ tab.label }}</span>
+                    <span *ngIf="tab.badge" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+                      {{ tab.badge }}
                     </span>
                   </div>
-                  <!-- Barra de progreso -->
-                  <div class="w-full bg-gray-200 rounded-full h-3 mt-2">
-                    <div class="h-3 rounded-full transition-all duration-300"
-                         [style.width.%]="asistencia.porcentaje"
-                         [ngClass]="{
-                           'bg-green-500': asistencia.porcentaje >= 80,
-                           'bg-yellow-500': asistencia.porcentaje >= 60 && asistencia.porcentaje < 80,
-                           'bg-red-500': asistencia.porcentaje < 60
-                         }">
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </button>
+              </nav>
             </div>
 
-            <!-- 4. Gráfico de Asistencia -->
-            <div class="bg-white rounded-lg shadow p-6">
-              <h2 class="text-2xl font-semibold mb-4 text-gray-800">Historial de Asistencia</h2>
-              <div class="space-y-3">
-                <div *ngFor="let dia of asistencia.historial_semanal" class="flex items-center">
-                  <span class="w-20 text-sm text-gray-600">{{ dia.fecha }}</span>
-                  <div class="flex-1 mx-4">
-                    <div class="h-6 bg-gray-200 rounded-full relative">
-                      <div class="h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold transition-all duration-300"
-                           [style.width]="dia.presente ? '100%' : '0%'"
-                           [ngClass]="{
-                             'bg-green-500': dia.presente,
-                             'bg-red-500': !dia.presente
-                           }">
-                        {{ dia.presente ? 'Presente' : 'Ausente' }}
-                      </div>
+            <!-- Contenido de las pestañas -->
+            <div class="p-6">
+              
+              <!-- TAB 1: Información General -->
+              <div *ngIf="tabActual === 'info'" class="space-y-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Información General</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-700 mb-3">Detalles de la Materia</h3>
+                    <div class="space-y-2">
+                      <p><span class="font-medium text-gray-600">Materia:</span> {{ detalleMateria.nombre }}</p>
+                      <p><span class="font-medium text-gray-600">Profesor:</span> {{ detalleMateria.profesor }}</p>
+                      <p><span class="font-medium text-gray-600">Curso:</span> {{ detalleMateria.curso }}</p>
                     </div>
                   </div>
-                  <span class="w-8 text-sm"
-                        [ngClass]="{
-                          'text-green-600': dia.presente,
-                          'text-red-600': !dia.presente
+                  
+                  <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-700 mb-3">Rendimiento Actual</h3>
+                    <div class="space-y-2">
+                      <p><span class="font-medium text-gray-600">Promedio:</span> 
+                        <span class="text-lg font-bold" [ngClass]="{
+                          'text-green-600': detalleMateria.promedio >= 80,
+                          'text-yellow-600': detalleMateria.promedio >= 60 && detalleMateria.promedio < 80,
+                          'text-red-600': detalleMateria.promedio < 60
+                        }">{{ detalleMateria.promedio }}</span>
+                      </p>
+                      <p><span class="font-medium text-gray-600">Estado:</span> 
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="{
+                          'bg-green-100 text-green-800': detalleMateria.promedio >= 60,
+                          'bg-red-100 text-red-800': detalleMateria.promedio < 60
                         }">
-                    {{ dia.presente ? '✓' : '✗' }}
-                  </span>
+                          {{ detalleMateria.promedio >= 60 ? 'Aprobando' : 'En Riesgo' }}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <!-- TAB 2: Gráficos de Asistencia -->
+              <div *ngIf="tabActual === 'asistencia'">
+                <app-asistencia-chart 
+                  [datosAsistencia]="asistencia"
+                  [titulo]="'Análisis de Asistencia - ' + detalleMateria.nombre">
+                </app-asistencia-chart>
+              </div>
+
+              <!-- TAB 3: Actividades -->
+              <div *ngIf="tabActual === 'actividades'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                  <h2 class="text-2xl font-semibold text-gray-800">Actividades Asignadas</h2>
+                  <div class="text-sm text-gray-600">
+                    Total: {{ actividades.length }} actividades
+                  </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nota</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <tr *ngFor="let actividad of actividades; trackBy: trackByActividadId" class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <div class="text-sm font-medium text-gray-900">{{ actividad.titulo }}</div>
+                          <div class="text-sm text-gray-500" *ngIf="actividad.descripcion">{{ actividad.descripcion }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {{ actividad.tipo || actividad.dimension }}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {{ formatearFecha(actividad.fecha_entrega || actividad.fecha_creacion) }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                [ngClass]="{
+                                  'bg-green-100 text-green-800': actividad.estado === 'Entregado',
+                                  'bg-yellow-100 text-yellow-800': actividad.estado === 'Pendiente',
+                                  'bg-red-100 text-red-800': actividad.estado === 'Vencido'
+                                }">
+                            {{ actividad.estado }}
+                          </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span *ngIf="actividad.nota !== null && actividad.nota !== undefined" 
+                                class="font-semibold"
+                                [ngClass]="{
+                                  'text-green-600': actividad.nota >= 80,
+                                  'text-yellow-600': actividad.nota >= 60 && actividad.nota < 80,
+                                  'text-red-600': actividad.nota < 60
+                                }">
+                            {{ actividad.nota }}
+                          </span>
+                          <span *ngIf="actividad.nota === null || actividad.nota === undefined" 
+                                class="text-gray-400 italic">Sin calificar</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- TAB 4: Notas (Preparado para futuras gráficas) -->
+              <div *ngIf="tabActual === 'notas'" class="space-y-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Análisis de Notas</h2>
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                  <div class="flex">
+                    <svg class="w-5 h-5 text-blue-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p class="text-blue-700">Las gráficas de notas estarán disponibles próximamente.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- TAB 5: Análisis (Preparado para futuras métricas) -->
+              <div *ngIf="tabActual === 'analisis'" class="space-y-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Análisis Predictivo</h2>
+                <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded">
+                  <div class="flex">
+                    <svg class="w-5 h-5 text-purple-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p class="text-purple-700">Los análisis predictivos y comparativos estarán disponibles próximamente.</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -196,14 +251,15 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
   cargando = true;
   error = '';
 
+  // Datos de la materia
   detalleMateria: any = {
     nombre: '',
     profesor: '',
-    promedio: 0
+    promedio: 0,
+    curso: ''
   };
 
   actividades: any[] = [];
-  
   asistencia: any = {
     total_clases: 0,
     clases_asistidas: 0,
@@ -211,6 +267,43 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
     porcentaje: 0,
     historial_semanal: []
   };
+
+  // Sistema de pestañas
+  tabActual = 'info';
+
+  // 👈 Usar la interfaz Tab con tipado correcto
+  tabs: Tab[] = [
+    {
+      id: 'info',
+      label: 'Información',
+      icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+      badge: null
+    },
+    {
+      id: 'asistencia',
+      label: 'Asistencia',
+      icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>',
+      badge: null
+    },
+    {
+      id: 'actividades',
+      label: 'Actividades',
+      icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>',
+      badge: null
+    },
+    {
+      id: 'notas',
+      label: 'Notas',
+      icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>',
+      badge: null
+    },
+    {
+      id: 'analisis',
+      label: 'Análisis',
+      icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>',
+      badge: null
+    }
+  ];
 
   constructor(
     private route: ActivatedRoute,
@@ -225,7 +318,28 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
     });
   }
 
-  // 👈 Agregar método para formatear fecha sin pipe
+  // Métodos del sistema de pestañas
+  cambiarTab(tabId: string): void {
+    this.tabActual = tabId;
+  }
+
+  getTabClass(tabId: string): string {
+    const baseClass = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+    const activeClass = 'border-blue-500 text-blue-600';
+    
+    return this.tabActual === tabId ? activeClass : baseClass;
+  }
+
+  // Métodos de tracking para Angular
+  trackByTabId(index: number, tab: Tab): string {
+    return tab.id;
+  }
+
+  trackByActividadId(index: number, actividad: any): any {
+    return actividad.id || index;
+  }
+
+  // Método para formatear fechas
   formatearFecha(fechaISO: string): string {
     if (!fechaISO) return 'Sin fecha';
     
@@ -240,16 +354,20 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
     }
   }
 
+  // Cargar datos de la materia
   cargarDatosMateria(): void {
     this.cargando = true;
     this.error = '';
 
-    // 👈 Usar el endpoint real que creamos
     this.alumnoService.getDetalleMateriaAlumno(this.materiaId).subscribe({
       next: (data) => {
         this.detalleMateria = data.materia;
         this.actividades = data.actividades;
         this.asistencia = data.asistencia;
+        
+        // Actualizar badges de las pestañas
+        this.actualizarBadgesTabs();
+        
         this.cargando = false;
       },
       error: (err) => {
@@ -258,6 +376,19 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
         this.cargando = false;
       }
     });
+  }
+
+  private actualizarBadgesTabs(): void {
+    // Actualizar badges con información dinámica
+    const actividadesTab = this.tabs.find(t => t.id === 'actividades');
+    if (actividadesTab) {
+      actividadesTab.badge = this.actividades.length.toString(); // 👈 Ahora funciona
+    }
+
+    const asistenciaTab = this.tabs.find(t => t.id === 'asistencia');
+    if (asistenciaTab) {
+      asistenciaTab.badge = `${this.asistencia.porcentaje}%`; // 👈 Ahora funciona
+    }
   }
 
   volver(): void {

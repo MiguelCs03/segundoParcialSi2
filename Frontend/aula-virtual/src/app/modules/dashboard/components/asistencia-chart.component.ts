@@ -12,9 +12,12 @@ Chart.register(...registerables);
       <h3 class="text-xl font-semibold mb-4 text-gray-800">{{ titulo }}</h3>
       
       <!-- Gráfica de Dona -->
-      <div class="flex flex-col lg:flex-row items-center gap-6">
+      <div class="flex flex-col lg:flex-row items-center gap-6 mb-8">
         <div class="w-full lg:w-1/2">
-          <canvas #donutChart width="300" height="300"></canvas>
+          <!-- 👈 Contenedor con altura fija para la dona -->
+          <div class="relative h-80 w-full">
+            <canvas #donutChart class="max-w-full max-h-full"></canvas>
+          </div>
         </div>
         
         <!-- Estadísticas -->
@@ -43,9 +46,12 @@ Chart.register(...registerables);
       </div>
       
       <!-- Gráfica de Línea - Tendencia -->
-      <div class="mt-8">
+      <div class="border-t border-gray-200 pt-6">
         <h4 class="text-lg font-semibold mb-4 text-gray-700">Tendencia de Asistencia</h4>
-        <canvas #lineChart width="400" height="200"></canvas>
+        <!-- 👈 Contenedor con altura fija y controlada -->
+        <div class="relative w-full h-64 bg-gray-50 rounded-lg p-4">
+          <canvas #lineChart class="max-w-full max-h-full"></canvas>
+        </div>
       </div>
     </div>
   `,
@@ -90,6 +96,10 @@ export class AsistenciaChartComponent implements OnInit {
     const asistidas = this.datosAsistencia.clases_asistidas || 0;
     const perdidas = this.datosAsistencia.clases_perdidas || 0;
 
+    // 👈 Ajustar tamaño del canvas
+    this.donutChart.nativeElement.width = 300;
+    this.donutChart.nativeElement.height = 300;
+
     this.chartDonut = new Chart(ctx, {
       type: 'doughnut',
       data: {
@@ -113,15 +123,16 @@ export class AsistenciaChartComponent implements OnInit {
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true, // 👈 Mantener aspecto
+        aspectRatio: 1, // 👈 Proporción cuadrada
         plugins: {
           legend: {
             position: 'bottom',
             labels: {
-              padding: 20,
+              padding: 15,
               usePointStyle: true,
               font: {
-                size: 14
+                size: 12
               }
             }
           },
@@ -144,10 +155,18 @@ export class AsistenciaChartComponent implements OnInit {
     const ctx = this.lineChart.nativeElement.getContext('2d');
     if (!ctx) return;
 
+    // 👈 Establecer tamaño fijo del canvas
+    this.lineChart.nativeElement.width = 800;
+    this.lineChart.nativeElement.height = 200;
+
     // Procesar historial para la gráfica de línea
     const historial = this.datosAsistencia.historial_semanal || [];
-    const labels = historial.map((item: any) => item.fecha);
-    const asistenciaData = historial.map((item: any) => item.presente ? 1 : 0);
+    
+    // 👈 Limitar a últimos 10 registros para evitar que se haga muy ancha
+    const historialLimitado = historial.slice(-10);
+    
+    const labels = historialLimitado.map((item: any) => item.fecha);
+    const asistenciaData = historialLimitado.map((item: any) => item.presente ? 1 : 0);
 
     // Calcular promedio móvil para mostrar tendencia
     const promedioMovil = this.calcularPromedioMovil(asistenciaData, 3);
@@ -162,11 +181,11 @@ export class AsistenciaChartComponent implements OnInit {
             data: asistenciaData,
             borderColor: '#3B82F6',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            pointBackgroundColor: asistenciaData.map(val => val === 1 ? '#10B981' : '#EF4444'),
-            pointBorderColor: asistenciaData.map(val => val === 1 ? '#059669' : '#DC2626'),
-            pointRadius: 6,
-            pointHoverRadius: 8,
-            tension: 0.4,
+            pointBackgroundColor: asistenciaData.map((val: number) => val === 1 ? '#10B981' : '#EF4444'),
+            pointBorderColor: asistenciaData.map((val: number) => val === 1 ? '#059669' : '#DC2626'),
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            tension: 0.3,
             fill: true
           },
           {
@@ -176,41 +195,87 @@ export class AsistenciaChartComponent implements OnInit {
             backgroundColor: 'transparent',
             borderDash: [5, 5],
             pointRadius: 0,
-            tension: 0.4
+            tension: 0.3
           }
         ]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
+        maintainAspectRatio: true, // 👈 Mantener proporción
+        aspectRatio: 4, // 👈 Proporción 4:1 (ancho:alto)
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
         scales: {
           x: {
             title: {
               display: true,
-              text: 'Fechas'
+              text: 'Fechas Recientes',
+              font: {
+                size: 12
+              }
+            },
+            grid: {
+              display: true,
+              color: 'rgba(0, 0, 0, 0.1)'
+            },
+            ticks: {
+              maxTicksLimit: 8, // 👈 Limitar número de etiquetas
+              font: {
+                size: 10
+              }
             }
           },
           y: {
             title: {
               display: true,
-              text: 'Asistencia'
+              text: 'Asistencia',
+              font: {
+                size: 12
+              }
             },
             min: 0,
             max: 1,
+            grid: {
+              display: true,
+              color: 'rgba(0, 0, 0, 0.1)'
+            },
             ticks: {
-              callback: (value) => value === 1 ? 'Presente' : 'Ausente'
+              stepSize: 0.5,
+              callback: (value) => {
+                if (value === 1) return 'Presente';
+                if (value === 0.5) return '50%';
+                if (value === 0) return 'Ausente';
+                return '';
+              },
+              font: {
+                size: 10
+              }
             }
           }
         },
         plugins: {
           legend: {
-            position: 'top'
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              font: {
+                size: 12
+              },
+              padding: 15
+            }
           },
           tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: '#3B82F6',
+            borderWidth: 1,
             callbacks: {
               label: (context) => {
                 if (context.datasetIndex === 0) {
-                  return `${context.parsed.y === 1 ? 'Presente' : 'Ausente'}`;
+                  return `Asistencia: ${context.parsed.y === 1 ? 'Presente' : 'Ausente'}`;
                 }
                 return `Tendencia: ${(context.parsed.y * 100).toFixed(1)}%`;
               }

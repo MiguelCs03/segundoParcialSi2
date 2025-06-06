@@ -150,6 +150,7 @@ class ResumenAlumnoView(APIView):
         for l in libretas:
             detalle = l.detalle_materia
             materias.append({
+                "id": detalle.materia.id,
                 "nombre": detalle.materia.nombre,
                 "profesor": detalle.profesor.nombre if detalle.profesor else "N/A",
                 "promedio": None  # aún no calculamos promedio

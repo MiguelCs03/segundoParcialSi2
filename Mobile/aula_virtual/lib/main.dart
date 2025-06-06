@@ -14,13 +14,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // 🔥 Inicializar Firebase y notificaciones
-  try {
     await NotificationService.initialize();
-    print("✅ Firebase y notificaciones inicializados");
-  } catch (e) {
-    print("❌ Error inicializando Firebase: $e");
-  }
-  
   runApp(MyApp());
 }
 

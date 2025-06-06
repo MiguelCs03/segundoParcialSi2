@@ -1,144 +1,181 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io';
 import '../constants/api_constants.dart';
-import '../models/user_model.dart';
 import '../utils/storage.util.dart';
-import 'dart:async';
+import '../models/user_model.dart';
+import '../providers/fcm_provider.dart';  // 🔥 Agregar
+
+class LoginResult {
+  final bool success;
+  final String message;
+  
+  LoginResult.success(this.message) : success = true;
+  LoginResult.error(this.message) : success = false;
+}
 
 class AuthService extends ChangeNotifier {
   User? _currentUser;
-  String? _accessToken;
   bool _isLoggedIn = false;
-
+  bool _isLoading = false;
+  FCMProvider? _fcmProvider;  // 🔥 Referencia al FCM Provider
+  
+  // Getters
   User? get currentUser => _currentUser;
-  String? get accessToken => _accessToken;
   bool get isLoggedIn => _isLoggedIn;
+  bool get isLoading => _isLoading;
   String? get userRole => _currentUser?.rol;
-
-  // Inicializar el servicio al abrir la app
-  Future<void> init() async {
-    await _loadStoredAuth();
+  
+  // 🔥 Método para inyectar el FCM Provider
+  void setFCMProvider(FCMProvider fcmProvider) {
+    _fcmProvider = fcmProvider;
   }
-
-  Future<void> _loadStoredAuth() async {
-    _accessToken = await StorageUtil.getAccessToken();
-    final userData = await StorageUtil.getUserData();
-    
-    if (_accessToken != null && userData != null) {
-      _currentUser = User.fromJson(userData);
-      _isLoggedIn = true;
+  
+  Future<void> init() async {
+    try {
+      // Verificar si hay una sesión guardada
+      final accessToken = await StorageUtil.getAccessToken();
+      final userData = await StorageUtil.getUserData();
+      
+      if (accessToken != null && userData != null) {
+        _currentUser = User.fromJson(userData);
+        _isLoggedIn = true;
+        print('✅ Sesión restaurada para: ${_currentUser?.nombre}');
+        
+        // 🔥 Enviar token FCM si está disponible
+        _sendFCMTokenIfAvailable();
+      }
+      
       notifyListeners();
+    } catch (e) {
+      print('❌ Error inicializando AuthService: $e');
     }
   }
-
+  
   Future<LoginResult> login(String codigo, String password) async {
+    _isLoading = true;
+    notifyListeners();
+    
     try {
-      final url = ApiConstants.loginEndpoint;
-      print('🚀 Intentando conectar a: $url');
-      print('📱 Datos: codigo=$codigo, password=${password.length} chars');
-      
-      final request = http.Request('POST', Uri.parse(url));
-      request.headers['Content-Type'] = 'application/json';
-      request.body = json.encode({
+      // 🔥 Preparar datos de login con FCM token
+      final loginData = {
         'codigo': codigo,
         'password': password,
-      });
+      };
       
-      print('📤 Headers: ${request.headers}');
-      print('📤 Body: ${request.body}');
+      // 🔥 Agregar FCM token si está disponible
+      if (_fcmProvider?.hasToken == true) {
+        loginData['fcm_token'] = _fcmProvider!.fcmToken!;
+        print('🔑 Enviando FCM token con credenciales: ${_fcmProvider!.fcmToken!.substring(0, 20)}...');
+      } else {
+        print('⚠️ No hay FCM token disponible para enviar con las credenciales');
+      }
       
-      final streamedResponse = await request.send().timeout(
-        Duration(seconds: 15),
-        onTimeout: () {
-          throw TimeoutException('Conexión timeout después de 15 segundos');
-        },
+      final response = await http.post(
+        Uri.parse('${ApiConstants.apiUrl}/login/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(loginData),
       );
       
-      final response = await http.Response.fromStream(streamedResponse);
-      
-      print('📡 Status Code: ${response.statusCode}');
-      print('📡 Response Headers: ${response.headers}');
-      print('📡 Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final responseData = json.decode(response.body);
         
-        // Verificar que los datos necesarios estén presentes
-        if (data['access'] == null || data['usuario'] == null) {
-          print('❌ Datos incompletos en respuesta');
-          return LoginResult.error('Respuesta incompleta del servidor');
-        }
-        
-        // Guardar tokens
+        // Guardar tokens y datos del usuario
         await StorageUtil.saveTokens(
-          data['access'], 
-          data['refresh']
+          responseData['access'], 
+          responseData['refresh']
         );
         
-        // Guardar datos del usuario
-        await StorageUtil.saveUserData(data['usuario']);
+        _currentUser = User.fromJson(responseData['usuario']);
+        await StorageUtil.saveUserData(_currentUser!.toJson());
         
-        // Actualizar estado
-        _accessToken = data['access'];
-        _currentUser = User.fromJson(data['usuario']);
         _isLoggedIn = true;
-        
+        _isLoading = false;
         notifyListeners();
+        
+        // 🔥 Enviar FCM token por separado como backup
+        _sendFCMTokenIfAvailable();
         
         print('✅ Login exitoso para: ${_currentUser?.nombre} (${_currentUser?.rol})');
         return LoginResult.success('Login exitoso');
       } else {
-        print('❌ Error HTTP ${response.statusCode}');
-        try {
-          final errorData = json.decode(response.body);
-          return LoginResult.error(
-            errorData['detail'] ?? errorData['error'] ?? 'Error del servidor'
-          );
-        } catch (e) {
-          return LoginResult.error('Error del servidor (${response.statusCode})');
-        }
+        _isLoading = false;
+        notifyListeners();
+        
+        final errorData = json.decode(response.body);
+        final errorMessage = errorData['detail'] ?? 'Error en las credenciales';
+        print('❌ Error de login: $errorMessage');
+        return LoginResult.error(errorMessage);
       }
-    } on SocketException catch (e) {
-      print('💥 SocketException: $e');
-      return LoginResult.error('No se puede conectar al servidor.\n\nVerifica que:\n• Django esté ejecutándose\n• Tu celular esté en Wi-Fi\n• La IP sea correcta (192.168.0.5)');
-    } on TimeoutException catch (e) {
-      print('💥 TimeoutException: $e');
-      return LoginResult.error('Timeout de conexión.\nEl servidor no responde.');
-    } on FormatException catch (e) {
-      print('💥 FormatException: $e');
-      return LoginResult.error('Error en formato de respuesta del servidor');
     } catch (e) {
-      print('💥 Error general: $e');
-      print('💥 Tipo: ${e.runtimeType}');
-      return LoginResult.error('Error: ${e.toString()}');
+      _isLoading = false;
+      notifyListeners();
+      
+      print('❌ Excepción en login: $e');
+      return LoginResult.error('Error de conexión. Verifica tu internet.');
     }
   }
-
+  
+  // 🔥 Método privado para enviar FCM token
+  void _sendFCMTokenIfAvailable() {
+    if (_fcmProvider?.hasToken == true && _isLoggedIn) {
+      _sendFCMTokenToServer(_fcmProvider!.fcmToken!);
+    }
+  }
+  
+  // 🔥 Enviar FCM token al servidor
+  Future<void> _sendFCMTokenToServer(String fcmToken) async {
+    try {
+      final accessToken = await StorageUtil.getAccessToken();
+      if (accessToken == null) return;
+      
+      final response = await http.post(
+        Uri.parse('${ApiConstants.apiUrl}/usuario/fcm-token/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: json.encode({'fcm_token': fcmToken}),
+      );
+      
+      if (response.statusCode == 200) {
+        print('✅ FCM token enviado al servidor exitosamente desde AuthService');
+      } else {
+        print('❌ Error enviando FCM token desde AuthService: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error enviando FCM token desde AuthService: $e');
+    }
+  }
+  
   Future<void> logout() async {
-    await StorageUtil.clearAll();
-    _currentUser = null;
-    _accessToken = null;
-    _isLoggedIn = false;
-    notifyListeners();
+    try {
+      // 🔥 Limpiar FCM token
+      _fcmProvider?.clearToken();
+      
+      // Limpiar datos locales
+      await StorageUtil.clearAll();
+      
+      _currentUser = null;
+      _isLoggedIn = false;
+      notifyListeners();
+      
+      print('✅ Logout exitoso');
+    } catch (e) {
+      print('❌ Error en logout: $e');
+    }
   }
-
-  // Headers para requests autenticados
-  Map<String, String> get authHeaders {
-    return {
-      'Content-Type': 'application/json',
-      if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
-    };
+  
+  // 🔥 Método para debug - mostrar estado completo
+  void debugStatus() {
+    print('=== AUTH SERVICE DEBUG ===');
+    print('Usuario logueado: $_isLoggedIn');
+    print('Usuario actual: ${_currentUser?.nombre} (${_currentUser?.rol})');
+    print('FCM Provider disponible: ${_fcmProvider != null}');
+    print('FCM Token disponible: ${_fcmProvider?.hasToken}');
+    if (_fcmProvider?.hasToken == true) {
+      _fcmProvider!.showFullToken();
+    }
+    print('========================');
   }
-}
-
-class LoginResult {
-  final bool isSuccess;
-  final String message;
-
-  LoginResult._(this.isSuccess, this.message);
-
-  factory LoginResult.success(String message) => LoginResult._(true, message);
-  factory LoginResult.error(String message) => LoginResult._(false, message);
 }

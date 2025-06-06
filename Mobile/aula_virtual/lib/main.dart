@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'core/services/auth_service.dart';
-import 'core/services/notification_service.dart';  // 🔥 Agregar
+import 'core/providers/fcm_provider.dart';  // 🔥 Agregar
 import 'features/auth/views/login_screen.dart';
 import 'features/profesor/views/profesor_dashboard.dart';
 import 'features/estudiante/views/estudiante_dashboard.dart';
@@ -13,8 +13,6 @@ void main() async {
   // 🔥 Asegurar que Flutter esté inicializado
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 🔥 Inicializar Firebase y notificaciones
-    await NotificationService.initialize();
   runApp(MyApp());
 }
 
@@ -23,13 +21,25 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // 🔥 FCM Provider primero
         ChangeNotifierProvider(
           create: (_) {
-            final authService = AuthService();
-            // 🔥 Inicializar el servicio de auth al crear
-            authService.init();
-            return authService;
-          }
+            final fcmProvider = FCMProvider();
+            // Inicializar FCM automáticamente
+            fcmProvider.initializeFCM();
+            return fcmProvider;
+          },
+        ),
+        // 🔥 Auth Service con acceso al FCM Provider
+        ChangeNotifierProxyProvider<FCMProvider, AuthService>(
+          create: (_) => AuthService(),
+          update: (context, fcmProvider, authService) {
+            if (authService != null) {
+              authService.setFCMProvider(fcmProvider);
+              authService.init();
+            }
+            return authService ?? AuthService();
+          },
         ),
       ],
       child: Consumer<AuthService>(

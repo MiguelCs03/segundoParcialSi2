@@ -143,8 +143,8 @@ class NotificationService {
   try {
     String? token = await _firebaseMessaging.getToken();
     if (token != null) {
-      print('🔑 FCM Token completo: $token'); // 👈 AQUÍ SE MUESTRA TODO
-      await _sendTokenToServer(token);
+      print('🔑 FCM Token obtenido en NotificationService: ${token.substring(0, 20)}...');
+      // Ya no enviamos aquí, se maneja en FCMProvider y AuthService
     } else {
       print('❌ No se pudo obtener el FCM token');
     }
@@ -153,33 +153,6 @@ class NotificationService {
   }
 }
 
-  
-  static Future<void> _sendTokenToServer(String token) async {
-    try {
-      final accessToken = await StorageUtil.getAccessToken();
-      if (accessToken == null) {
-        print('⚠ No hay token de acceso, no se puede enviar FCM token');
-        return;
-      }
-      
-      final response = await http.post(
-        Uri.parse('${ApiConstants.apiUrl}/usuario/fcm-token/'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
-        body: json.encode({'fcm_token': token}),
-      );
-      
-      if (response.statusCode == 200) {
-        print('✅ FCM token enviado al servidor exitosamente');
-      } else {
-        print('❌ Error enviando FCM token: ${response.statusCode} - ${response.body}');
-      }
-    } catch (e) {
-      print('❌ Error enviando FCM token al servidor: $e');
-    }
-  }
   
   // Método para actualizar token cuando el usuario hace login
   static Future<void> updateTokenAfterLogin() async {

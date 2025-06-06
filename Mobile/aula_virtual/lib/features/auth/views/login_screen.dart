@@ -41,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = false;
     });
 
-    if (result.isSuccess) {
+    if (result.success) {
       // Redirigir según el rol
       final role = authService.userRole?.toLowerCase();
       switch (role) {

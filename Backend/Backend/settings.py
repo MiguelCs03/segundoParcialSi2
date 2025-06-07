@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.x/topics/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
+
 FIREBASE_CREDENTIALS = os.getenv("FIREBASE_CREDENTIALS")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,17 +28,17 @@ DEBUG = True
 # 🔄 Agregar tu IP y permitir todas las conexiones
 ALLOWED_HOSTS = [
     'localhost',
-    '127.0.0.1', 
-    '192.168.0.5',  # Tu IP de Wi-Fi
-    '0.0.0.0',      # Permite todas las IPs
-    '*',            # Comodín para desarrollo
+    '127.0.0.1',
+    '192.168.0.5',    # 🔥 Tu IP de Wi-Fi
+    '192.168.56.1',   # Tu IP de Ethernet 4
+    '0.0.0.0',
+    '*',              # Para desarrollo
 ]
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Application definition
 INSTALLED_APPS = [
-    'corsheaders', 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,13 +46,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_simplejwt',  # 👈 Agregar JWT
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'drf_yasg',  # 🔥 Agregar drf-yasg para documentación Swagger
     'usuarios',
+    'libreta',
     'materia',
     'curso',
-    'libreta',
-    'actividad',
-    'drf_yasg',
+    'secrets',
+    'actividad'
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'

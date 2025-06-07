@@ -90,4 +90,16 @@ class FCMProvider extends ChangeNotifier {
       print('❌ No hay token FCM disponible');
     }
   }
+
+  // Método para debug - agregar este método
+  void debugStatus() {
+    print('=== FCM PROVIDER DEBUG ===');
+    print('Inicializado: $_isInitialized');
+    print('Tiene token: $hasToken');
+    print('Token length: ${_fcmToken?.length ?? 0}');
+    if (_fcmToken != null) {
+      print('Token preview: ${_fcmToken!.substring(0, 30)}...');
+    }
+    print('========================');
+  }
 }

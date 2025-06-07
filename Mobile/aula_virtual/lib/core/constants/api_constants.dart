@@ -1,5 +1,5 @@
 class ApiConstants {
-  // 🔄 Cambiar por tu IP de Wi-Fi
+  // 🔥 Tu IP real de Wi-Fi
   static const String baseUrl = 'http://192.168.0.5:8000';
   static const String apiUrl = '$baseUrl/api';
   
@@ -15,4 +15,11 @@ class ApiConstants {
   
   // Tutor endpoints
   static const String tutorEstudiantesEndpoint = '$apiUrl/tutor/estudiantes/';
+  
+  // 🔥 Método para debug
+  static void printCurrentConfig() {
+    print('🌐 Base URL: $baseUrl');
+    print('🔗 API URL: $apiUrl');
+    print('🔑 Login URL: $loginEndpoint');
+  }
 }

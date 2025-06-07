@@ -30,7 +30,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue),
+          borderSide: const BorderSide(color: Colors.blue),
         ),
       ),
       

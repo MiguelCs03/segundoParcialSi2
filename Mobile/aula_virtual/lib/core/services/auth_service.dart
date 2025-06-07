@@ -53,6 +53,10 @@ class AuthService extends ChangeNotifier {
   }
   
   Future<LoginResult> login(String codigo, String password) async {
+    print('🚀 === INICIANDO LOGIN DEBUG ===');
+    print('📍 URL: ${ApiConstants.apiUrl}/login/');
+    print('👤 Código: $codigo');
+    
     _isLoading = true;
     notifyListeners();
     
@@ -63,13 +67,27 @@ class AuthService extends ChangeNotifier {
         'password': password,
       };
       
+      // 🔥 Debug del FCM Provider
+      print('🔥 FCM Provider estado:');
+      print('   - Provider disponible: ${_fcmProvider != null}');
+      print('   - Provider inicializado: ${_fcmProvider?.isInitialized}');
+      print('   - Tiene token: ${_fcmProvider?.hasToken}');
+      
       // 🔥 Agregar FCM token si está disponible
       if (_fcmProvider?.hasToken == true) {
-        loginData['fcm_token'] = _fcmProvider!.fcmToken!;
-        print('🔑 Enviando FCM token con credenciales: ${_fcmProvider!.fcmToken!.substring(0, 20)}...');
+        final token = _fcmProvider!.fcmToken!;
+        loginData['fcm_token'] = token;
+        print('🔑 FCM Token agregado:');
+        print('   - Length: ${token.length}');
+        print('   - Preview: ${token.substring(0, 30)}...');
       } else {
-        print('⚠️ No hay FCM token disponible para enviar con las credenciales');
+        print('⚠️ NO hay FCM token disponible');
+        print('   - Provider null: ${_fcmProvider == null}');
+        print('   - Token null: ${_fcmProvider?.fcmToken == null}');
+        print('   - Token empty: ${_fcmProvider?.fcmToken?.isEmpty}');
       }
+      
+      print('📤 Datos a enviar: ${json.encode(loginData)}');
       
       final response = await http.post(
         Uri.parse('${ApiConstants.apiUrl}/login/'),
@@ -77,8 +95,16 @@ class AuthService extends ChangeNotifier {
         body: json.encode(loginData),
       );
       
+      print('📥 Respuesta recibida:');
+      print('   - Status: ${response.statusCode}');
+      print('   - Body: ${response.body}');
+      
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
+        
+        // 🔥 Verificar respuesta del FCM token
+        bool fcmUpdated = responseData['fcm_token_updated'] ?? false;
+        print('🔥 FCM Token actualizado según servidor: $fcmUpdated');
         
         // Guardar tokens y datos del usuario
         await StorageUtil.saveTokens(
@@ -92,9 +118,6 @@ class AuthService extends ChangeNotifier {
         _isLoggedIn = true;
         _isLoading = false;
         notifyListeners();
-        
-        // 🔥 Enviar FCM token por separado como backup
-        _sendFCMTokenIfAvailable();
         
         print('✅ Login exitoso para: ${_currentUser?.nombre} (${_currentUser?.rol})');
         return LoginResult.success('Login exitoso');

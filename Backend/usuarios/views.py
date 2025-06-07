@@ -32,6 +32,7 @@ class LoginView(APIView):
             properties={
                 'codigo': openapi.Schema(type=openapi.TYPE_STRING, description='Código de usuario'),
                 'password': openapi.Schema(type=openapi.TYPE_STRING, description='Contraseña'),
+                'fcm_token': openapi.Schema(type=openapi.TYPE_STRING, description='Token FCM (opcional)'),  # 🔥 Agregar
             },
             required=['codigo', 'password'],
         ),
@@ -42,6 +43,8 @@ class LoginView(APIView):
                     'detail': openapi.Schema(type=openapi.TYPE_STRING),
                     'access': openapi.Schema(type=openapi.TYPE_STRING),
                     'refresh': openapi.Schema(type=openapi.TYPE_STRING),
+                    'usuario': openapi.Schema(type=openapi.TYPE_OBJECT),
+                    'fcm_token_updated': openapi.Schema(type=openapi.TYPE_BOOLEAN),  # 🔥 Agregar
                 }
             ),
             400: openapi.Schema(
@@ -55,15 +58,58 @@ class LoginView(APIView):
     def post(self, request):
         codigo = request.data.get('codigo')
         password = request.data.get('password')
+        fcm_token = request.data.get('fcm_token')  # 🔥 Obtener FCM token
+        
+        # 🔥 Logs de debug
+        print(f"=== DEBUG LOGIN ===")
+        print(f"Código: {codigo}")
+        print(f"Password recibido: {'Sí' if password else 'No'}")
+        print(f"FCM Token recibido: {'Sí' if fcm_token else 'No'}")
+        if fcm_token:
+            print(f"FCM Token preview: {fcm_token[:30]}...")
+            print(f"FCM Token length: {len(fcm_token)}")
+        print(f"==================")
+        
         user = authenticate(request, username=codigo, password=password)
         if user is not None:
+            print(f"✅ Usuario autenticado: {user.id} - {user.nombre}")
+            
+            # 🔥 Actualizar FCM token con más logs
+            fcm_token_updated = False
+            if fcm_token and fcm_token.strip():
+                try:
+                    print(f"🔄 Intentando actualizar FCM token para usuario {user.id}")
+                    print(f"📱 Token anterior: {user.fcm_token[:30] if user.fcm_token else 'None'}...")
+                    
+                    user.fcm_token = fcm_token
+                    user.save(update_fields=['fcm_token'])
+                    
+                    # Verificar que se guardó
+                    user.refresh_from_db()
+                    if user.fcm_token == fcm_token:
+                        fcm_token_updated = True
+                        print(f"✅ FCM token GUARDADO correctamente para usuario {user.id}")
+                        print(f"📱 Token guardado: {user.fcm_token[:30]}...")
+                    else:
+                        print(f"❌ FCM token NO se guardó correctamente")
+                        
+                except Exception as e:
+                    print(f"❌ ERROR guardando FCM token: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                print(f"⚠️ No se recibió FCM token válido")
+            
             refresh = RefreshToken.for_user(user)
             return Response({
                 'detail': 'Login exitoso',
                 'access': str(refresh.access_token),
                 'refresh': str(refresh),
                 'usuario': UsuarioSerializer(user).data,
+                'fcm_token_updated': fcm_token_updated,  # 🔥 Informar si se actualizó
             }, status=status.HTTP_200_OK)
+        
+        print(f"❌ Login fallido para código: {codigo}")
         return Response({'detail': 'Código o contraseña incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):

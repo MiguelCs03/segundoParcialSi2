@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../core/constants/api_constants.dart';  // 🔥 Import correcto
+import '../../../core/providers/fcm_provider.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -31,7 +35,17 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
+    // 🔥 Debug completo antes del login
+    print('🚀 === LOGIN SCREEN DEBUG ===');
+    ApiConstants.printCurrentConfig();
+    
     final authService = Provider.of<AuthService>(context, listen: false);
+    final fcmProvider = Provider.of<FCMProvider>(context, listen: false);
+    
+    print('🔥 Estado de providers:');
+    authService.debugStatus();
+    fcmProvider.debugStatus();
+    
     final result = await authService.login(
       _codigoController.text.trim(),
       _passwordController.text,
@@ -70,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: NetworkImage(
               'https://i.pinimg.com/736x/66/e2/da/66e2da84352186f95f5e3fa5eb0828dc.jpg'
@@ -80,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Center(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             child: Card(
               elevation: 8,
               shape: RoundedRectangleBorder(
@@ -88,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               color: Colors.white.withOpacity(0.95),
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -100,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         size: 64,
                         color: Colors.blue[700],
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
                         'Aula Virtual',
                         style: TextStyle(
@@ -109,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.grey[800],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
                         'Iniciar Sesión',
                         style: TextStyle(
@@ -117,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.grey[600],
                         ),
                       ),
-                      SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
                       // Campo Código
                       TextFormField(
@@ -125,13 +139,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           labelText: 'Código',
                           hintText: 'Ej. 12345',
-                          prefixIcon: Icon(Icons.badge),
+                          prefixIcon: const Icon(Icons.badge),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.blue),
+                            borderSide: const BorderSide(color: Colors.blue),
                           ),
                         ),
                         keyboardType: TextInputType.number,
@@ -142,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
                       // Campo Contraseña
                       TextFormField(
@@ -150,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: !_showPassword,
                         decoration: InputDecoration(
                           labelText: 'Contraseña',
-                          prefixIcon: Icon(Icons.lock),
+                          prefixIcon: const Icon(Icons.lock),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _showPassword ? Icons.visibility_off : Icons.visibility,
@@ -166,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.blue),
+                            borderSide: const BorderSide(color: Colors.blue),
                           ),
                         ),
                         validator: (value) {
@@ -176,13 +190,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
                       // Mostrar error si existe
                       if (_errorMessage != null) ...[
                         Container(
                           width: double.infinity,
-                          padding: EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.red[50],
                             borderRadius: BorderRadius.circular(8),
@@ -197,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                       ],
 
                       // Botón de Login
@@ -215,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             elevation: 2,
                           ),
                           child: _isLoading
-                              ? SizedBox(
+                              ? const SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
@@ -225,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                 )
-                              : Text(
+                              : const Text(
                                   'Entrar',
                                   style: TextStyle(
                                     fontSize: 16,

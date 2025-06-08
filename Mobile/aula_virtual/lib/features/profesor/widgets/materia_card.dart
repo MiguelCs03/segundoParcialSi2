@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/profesor_service.dart';
 import '../views/materia_detalle_screen.dart'; // 🔥 IMPORTAR LA NUEVA PANTALLA
+import '../views/asistencia_movil_screen.dart';
+
 
 class MateriaCard extends StatelessWidget {
   final MateriaModel materia;
@@ -163,13 +165,15 @@ class MateriaCard extends StatelessWidget {
   }
 
   void _tomarAsistencia(BuildContext context) {
-    // Navegar directamente a la pantalla de asistencia
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Función de asistencia en desarrollo'),
-        backgroundColor: Colors.orange,
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => AsistenciaMovilScreen(
+        detalleId: materia.detalleId,
+        nombreMateria: materia.nombreCompleto,
       ),
-    );
+    ),
+   );
   }
 
   Color _getColorBySubject() {

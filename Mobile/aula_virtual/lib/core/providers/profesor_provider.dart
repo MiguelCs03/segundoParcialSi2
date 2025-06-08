@@ -17,6 +17,24 @@ class ProfesorProvider with ChangeNotifier {
   DestinatariosModel? get destinatarios => _destinatarios;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+ //variables para hacer funcionar la asistencia 
+ // 🔥 NUEVAS VARIABLES PARA ASISTENCIA MÓVIL
+  Map<String, dynamic>? _estadoAsistenciaMovil;
+  List<Map<String, dynamic>> _estudiantesRegistradosMovil = [];
+  bool _isLoadingAsistenciaMovil = false;
+  String? _codigoAsistencia;
+
+  // 🔥 NUEVOS GETTERS PARA ASISTENCIA MÓVIL
+  Map<String, dynamic>? get estadoAsistenciaMovil => _estadoAsistenciaMovil;
+  List<Map<String, dynamic>> get estudiantesRegistradosMovil => _estudiantesRegistradosMovil;
+  bool get isLoadingAsistenciaMovil => _isLoadingAsistenciaMovil;
+  String? get codigoAsistencia => _codigoAsistencia;
+  // Helper getters
+  bool get asistenciaHabilitada => _estadoAsistenciaMovil?['habilitada'] ?? false;
+  int get tiempoRestante => _estadoAsistenciaMovil?['tiempo_restante'] ?? 0;
+  int get totalRegistrados => _estudiantesRegistradosMovil.length;
+
+
 
   // 🔥 CARGAR MATERIAS
   Future<void> cargarMaterias() async {
@@ -112,6 +130,145 @@ class ProfesorProvider with ChangeNotifier {
 
   void clearError() {
     _errorMessage = null;
+    notifyListeners();
+  }
+  // 🔥 NUEVAS FUNCIONES PARA ASISTENCIA MÓVI
+  Future<bool> habilitarAsistenciaMovil(int detalleId, {int duracion = 15}) async {
+    try {
+      _isLoadingAsistenciaMovil = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      final resultado = await ProfesorService.habilitarAsistenciaMovil(
+        detalleId,
+        duracion: duracion,
+      );
+
+      if (resultado['success'] == true) {
+        _codigoAsistencia = resultado['codigo'];
+        // Cargar el estado actualizado
+        await cargarEstadoAsistenciaMovil(detalleId);
+        return true;
+      } else {
+        _errorMessage = resultado['message'] ?? 'Error al habilitar asistencia';
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error en habilitarAsistenciaMovil: $e');
+      _errorMessage = 'Error de conexión al habilitar asistencia';
+      return false;
+    } finally {
+      _isLoadingAsistenciaMovil = false;
+      notifyListeners();
+    }
+  }
+
+  /// Deshabilita la asistencia móvil para una materia
+  Future<bool> deshabilitarAsistenciaMovil(int detalleId) async {
+    try {
+      _isLoadingAsistenciaMovil = true;
+      notifyListeners();
+
+      final resultado = await ProfesorService.deshabilitarAsistenciaMovil(detalleId);
+
+      if (resultado['success'] == true) {
+        // Limpiar el estado local
+        _estadoAsistenciaMovil = null;
+        _estudiantesRegistradosMovil.clear();
+        _codigoAsistencia = null;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = resultado['message'] ?? 'Error al deshabilitar asistencia';
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error en deshabilitarAsistenciaMovil: $e');
+      _errorMessage = 'Error de conexión al deshabilitar asistencia';
+      return false;
+       } finally {
+      _isLoadingAsistenciaMovil = false;
+      notifyListeners();
+    }
+  }
+  
+  /// Carga el estado actual de la asistencia móvil
+  Future<void> cargarEstadoAsistenciaMovil(int detalleId) async {
+    try {
+      final estado = await ProfesorService.obtenerEstadoAsistenciaMovil(detalleId);
+      _estadoAsistenciaMovil = estado;
+      
+      // Si está habilitada, también obtener el código
+      if (estado['habilitada'] == true && estado['sesion'] != null) {
+        _codigoAsistencia = estado['sesion']['codigo'];
+        // Cargar estudiantes registrados
+        await cargarEstudiantesRegistradosMovil(detalleId);
+      } else {
+        _estudiantesRegistradosMovil.clear();
+        _codigoAsistencia = null;
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      print('❌ Error en cargarEstadoAsistenciaMovil: $e');
+      _errorMessage = 'Error al cargar estado de asistencia';
+      notifyListeners();
+    }
+  }
+
+  /// Carga los estudiantes que se han registrado en la sesión activa
+  Future<void> cargarEstudiantesRegistradosMovil(int detalleId) async {
+    try {
+      final response = await ProfesorService.obtenerEstudiantesRegistradosMovil(detalleId);
+      _estudiantesRegistradosMovil = List<Map<String, dynamic>>.from(response['estudiantes'] ?? []);
+      notifyListeners();
+    } catch (e) {
+      print('❌ Error en cargarEstudiantesRegistradosMovil: $e');
+      // No mostramos error aquí porque es una carga automática
+    }
+  }
+
+  /// Método para refrescar automáticamente los datos cada cierto tiempo
+  Future<void> refrescarAsistenciaMovil(int detalleId) async {
+    // Solo refrescar si hay una sesión activa
+    if (asistenciaHabilitada) {
+      await cargarEstadoAsistenciaMovil(detalleId);
+    }
+  }
+
+   /// Registrarse en asistencia móvil (para estudiantes)
+  Future<bool> registrarseAsistenciaMovil(String codigo) async {
+    try {
+      _isLoadingAsistenciaMovil = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      final resultado = await ProfesorService.registrarseAsistenciaMovil(codigo);
+
+      if (resultado['success'] == true) {
+        return true;
+      } else {
+        _errorMessage = resultado['message'] ?? 'Error al registrarse';
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error en registrarseAsistenciaMovil: $e');
+      _errorMessage = 'Error de conexión al registrarse';
+      return false;
+    } finally {
+      _isLoadingAsistenciaMovil = false;
+      notifyListeners();
+    }
+    }
+
+  // ... mantener todos los métodos de utilidad existentes ...
+
+  /// Limpia solo los datos de asistencia móvil
+  void limpiarAsistenciaMovil() {
+    _estadoAsistenciaMovil = null;
+    _estudiantesRegistradosMovil.clear();
+    _codigoAsistencia = null;
+    _isLoadingAsistenciaMovil = false;
     notifyListeners();
   }
 }

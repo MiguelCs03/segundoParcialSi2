@@ -353,4 +353,159 @@ class ProfesorService {
       throw Exception('Error de conexión al obtener reporte');
     }
   }
+// -----
+// ... mantener todo el código existente ...
+
+// 🔥 AGREGAR AL FINAL DE LA CLASE ProfesorService:
+
+  // 🔥 MÉTODOS PARA ASISTENCIA MÓVIL
+
+  /// Habilita la asistencia móvil para una materia
+  static Future<Map<String, dynamic>> habilitarAsistenciaMovil(
+  int detalleId, {
+  int duracion = 15,
+}) async {
+  try {
+    final headers = await _getHeaders();
+    
+    // 🔥 URL CORREGIDA - QUITAR "/materia" DEL INICIO
+    final url = '$baseUrl/profesor/materia/$detalleId/asistencia-movil/habilitar/';
+    print('🔍 URL completa: $url');
+    print('🔍 Headers: $headers');
+    print('🔍 Body: ${jsonEncode({'duracion': duracion})}');
+    
+    final response = await http.post(
+      Uri.parse(url),
+      headers: headers,
+      body: jsonEncode({
+        'duracion': duracion,
+      }),
+    );
+
+    print('🔥 Response Status: ${response.statusCode}');
+    print('🔥 Response Headers: ${response.headers}');
+    print('🔥 Response Body: ${response.body}');
+
+    // 🔥 VERIFICAR SI LA RESPUESTA ES HTML
+    if (response.body.startsWith('<!DOCTYPE html>') || response.body.startsWith('<html>')) {
+      throw Exception('El servidor devolvió HTML en lugar de JSON. URL incorrecta: $url');
+    }
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      try {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al habilitar asistencia');
+      } catch (e) {
+        throw Exception('Error del servidor: ${response.statusCode}');
+      }
+    }
+  } catch (e) {
+    print('❌ Error en habilitarAsistenciaMovil: $e');
+    rethrow;
+  }
+}
+  /// Deshabilita la asistencia móvil para una materia
+  static Future<Map<String, dynamic>> deshabilitarAsistenciaMovil(int detalleId) async {
+    try {
+      final headers = await _getHeaders();
+      // 🔥 URL CORREGIDA
+      final response = await http.post(
+        Uri.parse('$baseUrl/profesor/materia/$detalleId/asistencia-movil/deshabilitar/'),
+        headers: headers,
+      );
+
+      print('🔥 deshabilitarAsistenciaMovil - Status: ${response.statusCode}');
+      print('🔥 deshabilitarAsistenciaMovil - Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al deshabilitar asistencia');
+      }
+    } catch (e) {
+      print('❌ Error en deshabilitarAsistenciaMovil: $e');
+      rethrow;
+    }
+  }
+
+  /// Obtiene el estado actual de la asistencia móvil
+  static Future<Map<String, dynamic>> obtenerEstadoAsistenciaMovil(int detalleId) async {
+    try {
+      final headers = await _getHeaders();
+      // 🔥 URL CORREGIDA
+      final response = await http.get(
+        Uri.parse('$baseUrl/profesor/materia/$detalleId/asistencia-movil/estado/'),
+        headers: headers,
+      );
+
+      print('🔥 obtenerEstadoAsistenciaMovil - Status: ${response.statusCode}');
+      print('🔥 obtenerEstadoAsistenciaMovil - Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al obtener estado');
+      }
+    } catch (e) {
+      print('❌ Error en obtenerEstadoAsistenciaMovil: $e');
+      rethrow;
+    }
+  }
+
+  /// Obtiene la lista de estudiantes registrados en la sesión activa
+  static Future<Map<String, dynamic>> obtenerEstudiantesRegistradosMovil(int detalleId) async {
+    try {
+      final headers = await _getHeaders();
+      // 🔥 URL CORREGIDA
+      final response = await http.get(
+        Uri.parse('$baseUrl/profesor/materia/$detalleId/asistencia-movil/registrados/'),
+        headers: headers,
+      );
+
+      print('🔥 obtenerEstudiantesRegistradosMovil - Status: ${response.statusCode}');
+      print('🔥 obtenerEstudiantesRegistradosMovil - Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al obtener estudiantes');
+      }
+    } catch (e) {
+      print('❌ Error en obtenerEstudiantesRegistradosMovil: $e');
+      rethrow;
+    }
+  }
+
+  /// Método para que el estudiante se registre con código
+  static Future<Map<String, dynamic>> registrarseAsistenciaMovil(String codigo) async {
+    try {
+      final headers = await _getHeaders();
+      // 🔥 URL CORREGIDA
+      final response = await http.post(
+        Uri.parse('$baseUrl/materia/estudiante/asistencia-movil/registrarse/'),
+        headers: headers,
+        body: jsonEncode({
+          'codigo': codigo,
+        }),
+      );
+
+      print('🔥 registrarseAsistenciaMovil - Status: ${response.statusCode}');
+      print('🔥 registrarseAsistenciaMovil - Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['error'] ?? 'Error al registrarse');
+      }
+    } catch (e) {
+      print('❌ Error en registrarseAsistenciaMovil: $e');
+      rethrow;
+    }
+  }
 }

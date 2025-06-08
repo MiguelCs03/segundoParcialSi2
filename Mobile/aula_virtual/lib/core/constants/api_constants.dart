@@ -1,7 +1,7 @@
 class ApiConstants {
   // 🔥 Tu IP real de Wi-Fi
- // static const String baseUrl = 'http://192.168.0.5:8000';
-  static const String baseUrl = 'http://192.168.0.58:8000';
+  static const String baseUrl = 'http://192.168.0.5:8000';
+  //static const String baseUrl = 'http://192.168.0.58:8000';
   static const String apiUrl = '$baseUrl/api';
   
   // Auth endpoints

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'core/services/auth_service.dart';
 import 'core/providers/fcm_provider.dart';
 import 'core/providers/profesor_provider.dart';  // 🔥 AGREGAR ESTA LÍNEA
+import 'core/providers/estudiante_provider.dart';
 import 'features/auth/views/login_screen.dart';
 import 'features/profesor/views/profesor_dashboard.dart';
 import 'features/estudiante/views/estudiante_dashboard.dart';
@@ -38,7 +39,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ProfesorProvider(),
         ),
-        
+        // 🔥 AGREGAR EstudianteProvider
+        ChangeNotifierProvider(
+          create: (_) => EstudianteProvider(),
+        ),
         // 🔥 Auth Service con acceso al FCM Provider
         ChangeNotifierProxyProvider<FCMProvider, AuthService>(
           create: (_) => AuthService(),

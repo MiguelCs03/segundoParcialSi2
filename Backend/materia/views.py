@@ -398,3 +398,315 @@ class MateriaDetalleAlumnoView(APIView):
                 "materia_especifica": detalle.materia.nombre,
                 "error": "No se pudieron cargar las asistencias"
             }
+
+from django.utils import timezone
+from datetime import timedelta
+import random
+import string
+from .models import SesionAsistenciaMovil, RegistroAsistenciaMovil
+
+# 🔥 VISTAS PARA ASISTENCIA MÓVIL (NUEVAS - NO AFECTAN LAS EXISTENTES)
+
+class HabilitarAsistenciaMovilView(APIView):
+    """Permite al profesor habilitar una sesión de asistencia móvil"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, detalle_id):
+        try:
+            # Verificar que el usuario sea profesor y tenga acceso a la materia
+            profesor = request.user
+            if profesor.rol.nombre.lower() != 'profesor':
+                return Response({'error': 'Solo los profesores pueden habilitar asistencia'}, status=403)
+
+            detalle = DetalleMateria.objects.get(id=detalle_id, profesor=profesor)
+            
+            # Obtener duración (por defecto 15 minutos)
+            duracion = int(request.data.get('duracion', 15))
+            if duracion < 1 or duracion > 120:  # Límites de 1 a 120 minutos
+                duracion = 15
+
+            # Desactivar sesiones anteriores de esta materia
+            SesionAsistenciaMovil.objects.filter(
+                detalle_materia=detalle, 
+                activa=True
+            ).update(activa=False)
+
+            # Generar código único de 6 dígitos
+            codigo = self._generar_codigo_unico()
+
+            # Crear nueva sesión
+            fecha_fin = timezone.now() + timedelta(minutes=duracion)
+            sesion = SesionAsistenciaMovil.objects.create(
+                detalle_materia=detalle,
+                codigo=codigo,
+                fecha_fin=fecha_fin,
+                activa=True,
+                duracion_minutos=duracion
+            )
+
+            return Response({
+                'success': True,
+                'message': 'Asistencia móvil habilitada correctamente',
+                'sesion': {
+                    'id': sesion.id,
+                    'codigo': sesion.codigo,
+                    'fecha_inicio': sesion.fecha_inicio,
+                    'fecha_fin': sesion.fecha_fin,
+                    'duracion_minutos': duracion,
+                    'estudiantes_registrados': 0,
+                    'tiempo_restante': sesion.tiempo_restante_minutos
+                }
+            })
+
+        except DetalleMateria.DoesNotExist:
+            return Response({
+                'error': 'Materia no encontrada o no tienes permisos'
+            }, status=404)
+        except Exception as e:
+            return Response({
+                'error': f'Error al habilitar asistencia: {str(e)}'
+            }, status=500)
+
+    def _generar_codigo_unico(self):
+        """Genera un código único de 6 dígitos"""
+        while True:
+            codigo = ''.join(random.choices(string.digits, k=6))
+            if not SesionAsistenciaMovil.objects.filter(codigo=codigo, activa=True).exists():
+                return codigo
+
+
+class DeshabilitarAsistenciaMovilView(APIView):
+    """Permite al profesor deshabilitar la asistencia móvil"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, detalle_id):
+        try:
+            profesor = request.user
+            if profesor.rol.nombre.lower() != 'profesor':
+                return Response({'error': 'Solo los profesores pueden deshabilitar asistencia'}, status=403)
+
+            detalle = DetalleMateria.objects.get(id=detalle_id, profesor=profesor)
+
+            # Desactivar todas las sesiones activas
+            sesiones_activas = SesionAsistenciaMovil.objects.filter(
+                detalle_materia=detalle, 
+                activa=True
+            )
+            count = sesiones_activas.count()
+            total_registros = sum(sesion.total_registros for sesion in sesiones_activas)
+            
+            sesiones_activas.update(activa=False)
+
+            return Response({
+                'success': True,
+                'message': f'Asistencia móvil deshabilitada. {count} sesión(es) cerrada(s).',
+                'sesiones_cerradas': count,
+                'total_registros': total_registros
+            })
+
+        except DetalleMateria.DoesNotExist:
+            return Response({
+                'error': 'Materia no encontrada o no tienes permisos'
+            }, status=404)
+        except Exception as e:
+            return Response({
+                'error': f'Error al deshabilitar asistencia: {str(e)}'
+            }, status=500)
+
+
+class EstadoAsistenciaMovilView(APIView):
+    """Obtiene el estado actual de la asistencia móvil para una materia"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, detalle_id):
+        try:
+            profesor = request.user
+            if profesor.rol.nombre.lower() != 'profesor':
+                return Response({'error': 'Solo los profesores pueden ver el estado'}, status=403)
+
+            detalle = DetalleMateria.objects.get(id=detalle_id, profesor=profesor)
+
+            # Buscar sesión activa
+            sesion_activa = SesionAsistenciaMovil.objects.filter(
+                detalle_materia=detalle, 
+                activa=True
+            ).first()
+
+            if sesion_activa and sesion_activa.esta_activa:
+                return Response({
+                    'habilitada': True,
+                    'sesion': {
+                        'id': sesion_activa.id,
+                        'codigo': sesion_activa.codigo,
+                        'fecha_inicio': sesion_activa.fecha_inicio,
+                        'fecha_fin': sesion_activa.fecha_fin,
+                        'tiempo_restante': sesion_activa.tiempo_restante_minutos,
+                        'estudiantes_registrados': sesion_activa.total_registros,
+                        'duracion_original': sesion_activa.duracion_minutos
+                    }
+                })
+            else:
+                # Si hay sesión pero expiró, desactivarla
+                if sesion_activa:
+                    sesion_activa.activa = False
+                    sesion_activa.save()
+
+                return Response({
+                    'habilitada': False,
+                    'sesion': None
+                })
+
+        except DetalleMateria.DoesNotExist:
+            return Response({
+                'error': 'Materia no encontrada'
+            }, status=404)
+
+
+class EstudiantesRegistradosMovilView(APIView):
+    """Obtiene la lista de estudiantes que se registraron en la sesión activa"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, detalle_id):
+        try:
+            profesor = request.user
+            if profesor.rol.nombre.lower() != 'profesor':
+                return Response({'error': 'Solo los profesores pueden ver los registros'}, status=403)
+
+            detalle = DetalleMateria.objects.get(id=detalle_id, profesor=profesor)
+            
+            sesion_activa = SesionAsistenciaMovil.objects.filter(
+                detalle_materia=detalle, 
+                activa=True
+            ).first()
+
+            if not sesion_activa:
+                return Response({
+                    'estudiantes': [],
+                    'message': 'No hay sesión activa',
+                    'total': 0
+                })
+
+            # Obtener registros de la sesión actual
+            registros = RegistroAsistenciaMovil.objects.filter(
+                sesion=sesion_activa
+            ).select_related('estudiante').order_by('-fecha_registro')
+
+            estudiantes_data = []
+            for registro in registros:
+                estudiantes_data.append({
+                    'id': registro.estudiante.id,
+                    'nombre': registro.estudiante.nombre,
+                    'codigo': getattr(registro.estudiante, 'codigo', ''),
+                    'hora_registro': registro.fecha_registro,
+                    'tiempo_transcurrido': self._calcular_tiempo_transcurrido(registro.fecha_registro)
+                })
+
+            return Response({
+                'estudiantes': estudiantes_data,
+                'total': len(estudiantes_data),
+                'sesion_codigo': sesion_activa.codigo,
+                'sesion_activa': sesion_activa.esta_activa
+            })
+
+        except DetalleMateria.DoesNotExist:
+            return Response({
+                'error': 'Materia no encontrada'
+            }, status=404)
+
+    def _calcular_tiempo_transcurrido(self, fecha_registro):
+        """Calcula cuánto tiempo pasó desde el registro"""
+        diferencia = timezone.now() - fecha_registro
+        minutos = int(diferencia.total_seconds() / 60)
+        if minutos < 1:
+            return "Hace menos de 1 minuto"
+        elif minutos == 1:
+            return "Hace 1 minuto"
+        else:
+            return f"Hace {minutos} minutos"
+
+
+class RegistrarseAsistenciaMovilView(APIView):
+    """Permite a los estudiantes registrarse usando el código"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            estudiante = request.user
+            if estudiante.rol.nombre.lower() != 'estudiante':
+                return Response({'error': 'Solo los estudiantes pueden registrarse'}, status=403)
+
+            codigo = request.data.get('codigo', '').strip()
+            if not codigo or len(codigo) != 6:
+                return Response({'error': 'Código inválido'}, status=400)
+
+            # Buscar sesión activa con ese código
+            sesion = SesionAsistenciaMovil.objects.filter(
+                codigo=codigo,
+                activa=True
+            ).first()
+
+            if not sesion:
+                return Response({'error': 'Código no válido o sesión expirada'}, status=400)
+
+            if not sesion.esta_activa:
+                return Response({'error': 'La sesión ha expirado'}, status=400)
+
+            # Verificar que el estudiante pertenece a la materia
+            from libreta.models import Libreta
+            try:
+                Libreta.objects.get(
+                    estudiante=estudiante,
+                    detalle_materia=sesion.detalle_materia
+                )
+            except Libreta.DoesNotExist:
+                return Response({'error': 'No perteneces a esta materia'}, status=403)
+
+            # Verificar si ya se registró
+            registro_existente = RegistroAsistenciaMovil.objects.filter(
+                sesion=sesion,
+                estudiante=estudiante
+            ).first()
+
+            if registro_existente:
+                return Response({
+                    'error': 'Ya te registraste en esta sesión',
+                    'hora_registro': registro_existente.fecha_registro
+                }, status=400)
+
+            # Crear el registro
+            ip_address = self._obtener_ip(request)
+            lat = request.data.get('lat')
+            lng = request.data.get('lng')
+
+            registro = RegistroAsistenciaMovil.objects.create(
+                sesion=sesion,
+                estudiante=estudiante,
+                ip_address=ip_address,
+                ubicacion_lat=lat if lat else None,
+                ubicacion_lng=lng if lng else None
+            )
+
+            return Response({
+                'success': True,
+                'message': f'¡Asistencia registrada correctamente en {sesion.detalle_materia.materia.nombre}!',
+                'detalles': {
+                    'materia': sesion.detalle_materia.materia.nombre,
+                    'profesor': sesion.detalle_materia.profesor.nombre,
+                    'hora_registro': registro.fecha_registro,
+                    'tiempo_restante': sesion.tiempo_restante_minutos
+                }
+            })
+
+        except Exception as e:
+            return Response({
+                'error': f'Error al registrar asistencia: {str(e)}'
+            }, status=500)
+
+    def _obtener_ip(self, request):
+        """Obtiene la IP del cliente"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip

@@ -47,9 +47,9 @@ interface DestinatariosResponse {
       </div>
 
       <!-- Información de la materia seleccionada -->
-      <div *ngIf="destinatarios?.materia_info" class="mb-4 p-3 bg-blue-50 rounded-md">
+      <div *ngIf="destinatarios?.materia_info as materia" class="mb-4 p-3 bg-blue-50 rounded-md">
         <p class="text-sm text-blue-800">
-          📚 Enviando a estudiantes y tutores de: <strong>{{destinatarios.materia_info?.nombre}}</strong>
+          📚 Enviando a estudiantes y tutores de: <strong>{{materia.nombre}}</strong>
         </p>
       </div>
 

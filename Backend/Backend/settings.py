@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'materia',
     'curso',
     'secrets',
-    'actividad'
+    'actividad',
+    'prediccion_notas',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'

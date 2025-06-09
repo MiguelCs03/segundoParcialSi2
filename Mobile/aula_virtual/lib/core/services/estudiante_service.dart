@@ -9,8 +9,6 @@ import '../models/actividad_estudiante_model.dart';
 import '../models/asistencia_estudiante_model.dart';
 import '../models/registro_asistencia_movil_model.dart';
 
-
-
 // 🔥 SERVICIO PRINCIPAL PARA ESTUDIANTES
 class EstudianteService {
   static const String baseUrl = ApiConstants.apiUrl;
@@ -29,7 +27,7 @@ class EstudianteService {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/estudiante/dashboard/'),
+        Uri.parse('$baseUrl/alumno/resumen/'), // ✅ Correcto
         headers: headers,
       );
 
@@ -48,12 +46,12 @@ class EstudianteService {
     }
   }
 
-  // 🔥 OBTENER MATERIAS DEL ESTUDIANTE
+  // 🔥 OBTENER MATERIAS DEL ESTUDIANTE - CORREGIDO
   static Future<List<MateriaEstudianteModel>> obtenerMaterias() async {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/estudiante/materias/'),
+        Uri.parse('$baseUrl/alumno/materias/'), // 🔥 CAMBIADO: de estudiante a alumno
         headers: headers,
       );
 
@@ -72,12 +70,12 @@ class EstudianteService {
     }
   }
 
-  // 🔥 OBTENER DETALLE DE UNA MATERIA
+  // 🔥 OBTENER DETALLE DE UNA MATERIA - CORREGIDO
   static Future<DetalleMateriaEstudianteModel> obtenerDetalleMateria(int materiaId) async {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/estudiante/materia/$materiaId/'),
+        Uri.parse('$baseUrl/alumno/materia/$materiaId/detalle/'), // 🔥 CAMBIADO: agregado /detalle/
         headers: headers,
       );
 
@@ -96,12 +94,12 @@ class EstudianteService {
     }
   }
 
-  // 🔥 OBTENER ACTIVIDADES DE UNA MATERIA
+  // 🔥 OBTENER ACTIVIDADES DE UNA MATERIA - CORREGIDO
   static Future<List<ActividadEstudianteModel>> obtenerActividadesMateria(int materiaId) async {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/estudiante/materia/$materiaId/actividades/'),
+        Uri.parse('$baseUrl/alumno/materia/$materiaId/actividades/'), // 🔥 CAMBIADO: de estudiante a alumno
         headers: headers,
       );
 
@@ -119,12 +117,12 @@ class EstudianteService {
     }
   }
 
-  // 🔥 OBTENER HISTORIAL DE ASISTENCIA
+  // 🔥 OBTENER HISTORIAL DE ASISTENCIA - CORREGIDO
   static Future<List<AsistenciaEstudianteModel>> obtenerHistorialAsistencia(int materiaId) async {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/estudiante/materia/$materiaId/asistencias/'),
+        Uri.parse('$baseUrl/alumno/materia/$materiaId/asistencias/'), // 🔥 CAMBIADO: de estudiante a alumno
         headers: headers,
       );
 
@@ -142,7 +140,7 @@ class EstudianteService {
     }
   }
 
-  // 🔥 REGISTRARSE EN ASISTENCIA MÓVIL (NUEVO)
+  // 🔥 REGISTRARSE EN ASISTENCIA MÓVIL (MANTENER)
   static Future<RegistroAsistenciaMovilModel> registrarseAsistenciaMovil(String codigo) async {
     try {
       final headers = await _getHeaders();
@@ -150,7 +148,7 @@ class EstudianteService {
       print('🔥 Registrando asistencia móvil con código: $codigo');
       
       final response = await http.post(
-        Uri.parse('$baseUrl/estudiante/asistencia-movil/registrarse/'),
+        Uri.parse('$baseUrl/estudiante/asistencia-movil/registrarse/'), // ✅ Esta URL es correcta según urls.py de materia
         headers: headers,
         body: jsonEncode({
           'codigo': codigo,
@@ -179,12 +177,12 @@ class EstudianteService {
     }
   }
 
-  // 🔥 OBTENER ESTADÍSTICAS GENERALES
+  // 🔥 OBTENER ESTADÍSTICAS GENERALES - CORREGIDO
   static Future<Map<String, dynamic>> obtenerEstadisticasGenerales() async {
     try {
       final headers = await _getHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/estudiante/estadisticas/'),
+        Uri.parse('$baseUrl/alumno/estadisticas/'), // 🔥 CAMBIADO: de estudiante a alumno
         headers: headers,
       );
 
@@ -199,7 +197,7 @@ class EstudianteService {
     }
   }
 
-  // 🔥 BUSCAR ACTIVIDADES POR FILTRO
+  // 🔥 BUSCAR ACTIVIDADES POR FILTRO - CORREGIDO
   static Future<List<ActividadEstudianteModel>> buscarActividades({
     String? filtro,
     String? estado,
@@ -208,7 +206,7 @@ class EstudianteService {
     try {
       final headers = await _getHeaders();
       
-      String url = '$baseUrl/estudiante/actividades/';
+      String url = '$baseUrl/alumno/actividades/'; // 🔥 CAMBIADO: de estudiante a alumno
       List<String> queryParams = [];
       
       if (filtro != null && filtro.isNotEmpty) {

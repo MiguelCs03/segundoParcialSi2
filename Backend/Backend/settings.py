@@ -10,7 +10,9 @@ https://docs.djangoproject.com/en/4.x/topics/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
 
+FIREBASE_CREDENTIALS = os.getenv("FIREBASE_CREDENTIALS")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,12 +25,20 @@ SECRET_KEY = 'your-secret-key'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-# Application definition
+# 🔄 Agregar tu IP y permitir todas las conexiones
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '192.168.0.5',    # 🔥 Tu IP de Wi-Fi
+    '192.168.56.1',   # Tu IP de Ethernet 4
+    '0.0.0.0',
+    '*',              # Para desarrollo
+]
 
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Application definition
 INSTALLED_APPS = [
-    'corsheaders', 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -36,33 +46,37 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'drf_yasg',  # 🔥 Agregar drf-yasg para documentación Swagger
     'usuarios',
+    'libreta',
     'materia',
     'curso',
-    'libreta',
+    'secrets',
     'actividad',
-    'drf_yasg',
     'prediccion_notas',
-    # 'rest_framework.authtoken',  # Uncomment if you are using token authentication
-    # Add your apps here
 ]
+
 AUTH_USER_MODEL = 'usuarios.Usuario'
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # 👈 Mover CORS al inicio
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware', 
-
 ]
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
 ROOT_URLCONF = 'Backend.urls'
 
 TEMPLATES = [
@@ -84,22 +98,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Backend.wsgi.application'
 
 # Database
-# https://docs.djangoproject.com/en/4.x/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'colegio_db',
-        'USER': 'colegio_db',
-        'PASSWORD': 'colegio_db',
-        'HOST': 'localhost',  # Usa 'localhost' si ejecutas Django fuera de Docker
+        'USER': 'postgres',
+        'PASSWORD': 'mcangel03',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/4.x/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -116,32 +126,47 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
-# https://docs.djangoproject.com/en/4.x/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.x/howto/static-files/
-
+# Static files
 STATIC_URL = '/static/'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/4.x/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTHENTICATION_BACKENDS = [
     'usuarios.backends.CodigoBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+# 🔄 CORS configuración más permisiva para desarrollo
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
+# 🔄 JWT Configuration
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+}
+
+# Agregar estas líneas para deshabilitar CSRF completamente para APIs
+CSRF_COOKIE_SECURE = False
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False

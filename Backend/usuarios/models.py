@@ -47,6 +47,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     estado = models.BooleanField(default=True)
     codigo = models.BigIntegerField(unique=True)  # Ahora es numérico
     rol = models.ForeignKey(Rol, on_delete=models.SET_NULL, null=True, blank=True, related_name='usuarios')
+    fcm_token = models.TextField(null=True, blank=True)
     tutor = models.ForeignKey(
         'self',
         null=True,

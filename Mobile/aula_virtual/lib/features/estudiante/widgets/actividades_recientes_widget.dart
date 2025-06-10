@@ -99,11 +99,10 @@ class ActividadesRecientesWidget extends StatelessWidget {
   }
 
   Widget _buildActividadItem(Map<String, dynamic> actividad) {
-    final String nombre = actividad['nombre'] ?? 'Sin nombre';
+    // 🔥 ADAPTARSE A LA ESTRUCTURA DEL ENDPOINT /alumno/resumen/
+    final String titulo = actividad['titulo'] ?? actividad['nombre'] ?? 'Sin título';
     final String materia = actividad['materia'] ?? 'Sin materia';
     final String estado = actividad['estado'] ?? 'pendiente';
-    final String fechaVencimiento = actividad['fecha_vencimiento'] ?? '';
-    final double? nota = actividad['nota']?.toDouble();
 
     // Configuración por estado
     final EstadoConfig config = _getConfigByEstado(estado);
@@ -138,7 +137,7 @@ class ActividadesRecientesWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  nombre,
+                  titulo,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -157,61 +156,25 @@ class ActividadesRecientesWidget extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (fechaVencimiento.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        size: 12,
-                        color: Colors.grey[500],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _formatearFecha(fechaVencimiento),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
           ),
 
-          // 🔥 INFORMACIÓN ADICIONAL (NOTA O ESTADO)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: config.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  config.texto,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: config.color,
-                  ),
-                ),
+          // 🔥 ESTADO
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: config.color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              config.texto,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: config.color,
               ),
-              if (nota != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Nota: ${nota.toStringAsFixed(1)}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: _getColorByNota(nota),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         ],
       ),

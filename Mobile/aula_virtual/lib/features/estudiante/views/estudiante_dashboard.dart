@@ -10,6 +10,7 @@ import 'registro_asistencia_screen.dart';
 import 'estudiante_detalle_materia_screen.dart';
 //import '../../../core/services/estudiante_service.dart';
 import '../../../core/models/materia_estudiante_model.dart';
+import 'actividades_recientes_screen.dart';
 
 class EstudianteDashboard extends StatefulWidget {
   const EstudianteDashboard({super.key});
@@ -516,11 +517,15 @@ class _EstudianteDashboardState extends State<EstudianteDashboard> {
   }
 
   void _navegarAActividades() {
-    // Implementar navegación a pantalla de todas las actividades
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Funcionalidad en desarrollo'),
-        behavior: SnackBarBehavior.floating,
+    // 🔥 OBTENER EL PROVIDER CORRECTAMENTE
+    final provider = Provider.of<EstudianteProvider>(context, listen: false);
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActividadesRecientesScreen(
+          actividadesRecientes: provider.resumenDashboard?.ultimasActividades ?? [],
+        ),
       ),
     );
   }

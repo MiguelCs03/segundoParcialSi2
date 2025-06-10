@@ -22,12 +22,12 @@ class ActividadEstudianteModel {
   factory ActividadEstudianteModel.fromJson(Map<String, dynamic> json) {
     return ActividadEstudianteModel(
       id: json['id'] ?? 0,
-      nombre: json['nombre'] ?? '',
-      descripcion: json['descripcion'] ?? '',
-      estado: json['estado'] ?? '',
+      nombre: json['nombre'] ?? json['titulo'] ?? 'Sin título',
+      descripcion: json['descripcion'] ?? json['materia'] ?? '',
+      estado: json['estado'] ?? 'pendiente',
       fechaCreacion: json['fecha_creacion'] ?? '',
       fechaVencimiento: json['fecha_vencimiento'],
-      nota: json['nota']?.toDouble(),
+      nota: _parseDouble(json['nota']),
       comentario: json['comentario'],
     );
   }
@@ -45,10 +45,27 @@ class ActividadEstudianteModel {
     };
   }
 
-  // 🔥 GETTERS ÚTILES
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  // 🔥 GETTERS PARA ESTADOS (TODAS LAS VARIANTES)
   bool get estaPendiente => estado.toLowerCase() == 'pendiente';
-  bool get estaEntregada => estado.toLowerCase() == 'entregada';
-  bool get estaRevisada => estado.toLowerCase() == 'revisada';
+  
+  // Variantes para "entregado"
+  bool get estaEntregado => estado.toLowerCase() == 'entregado';
+  bool get estaEntregada => estaEntregado; // Alias
+  
+  // Variantes para "revisado"
+  bool get estaRevisado => estado.toLowerCase() == 'revisado';
+  bool get estaRevisada => estaRevisado; // Alias
+
+  // 🔥 GETTER PARA OBTENER LA MATERIA DESDE LA DESCRIPCIÓN
+  String get materia => descripcion.isNotEmpty ? descripcion : 'Sin materia';
 
   @override
   String toString() {

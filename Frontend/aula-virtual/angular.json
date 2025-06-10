@@ -39,7 +39,8 @@
             "prerender": true,
             "ssr": {
               "entry": "src/server.ts"
-            }
+            },
+            "aot": true
           },
           "configurations": {
             "production": {
@@ -105,5 +106,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "46b52e23-d88b-4357-b041-572a6d89aad4"
   }
 }

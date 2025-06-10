@@ -14,6 +14,7 @@ class Actividad(models.Model):
     descripcion = models.TextField(blank=True)
     dimension = models.ForeignKey(Dimension, on_delete=models.CASCADE, related_name='actividades')
     fechaCreacion = models.DateField(auto_now_add=True)  # Fecha de creación automática
+  
     def __str__(self):
         return self.nombre
 
@@ -27,6 +28,6 @@ class EntregaTarea(models.Model):
 class DetalleActividad(models.Model):
     actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='detalles_actividad')
     detalle_materia = models.ForeignKey('materia.DetalleMateria', on_delete=models.CASCADE, related_name='detalles_actividad')
-
+ # Fecha de creación automática # Fecha de creación automática
     def __str__(self):
         return f"{self.detalle_materia} - {self.actividad}"

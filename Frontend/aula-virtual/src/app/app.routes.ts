@@ -35,6 +35,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./modules/dashboard/pages/alumno-materia-detalle.component').then(m => m.AlumnoMateriaDetalleComponent)
   },
+
+  
+
   {
     path: 'mi-hijo',
     canActivate: [authGuard, roleGuard(['tutor'])],

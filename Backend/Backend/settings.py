@@ -102,8 +102,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'colegio_db',
-        'USER': 'postgres',
-        'PASSWORD': 'mcangel03',
+        'USER': 'colegio_db',
+        'PASSWORD': 'colegio_db',
         'HOST': 'localhost',
         'PORT': '5432',
     }

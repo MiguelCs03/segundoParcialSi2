@@ -4,6 +4,7 @@ import { NgFor, NgClass, NgIf } from '@angular/common';
 import { AlumnoService } from '../../../core/services/alumno.service';
 import { SidebarComponent } from '../components/sidebar.component';
 import { AsistenciaChartComponent } from '../components/asistencia-chart.component';
+import { HttpClient } from '@angular/common/http';
 
 // 👈 Definir interfaces para mejor tipado
 interface Tab {
@@ -164,6 +165,7 @@ interface Tab {
                     <thead class="bg-gray-50">
                       <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
@@ -173,12 +175,16 @@ interface Tab {
                     <tbody class="bg-white divide-y divide-gray-200">
                       <tr *ngFor="let actividad of actividades; trackBy: trackByActividadId" class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
-                          <div class="text-sm font-medium text-gray-900">{{ actividad.titulo }}</div>
-                          <div class="text-sm text-gray-500" *ngIf="actividad.descripcion">{{ actividad.descripcion }}</div>
+                          <div class="text-sm font-medium text-gray-900">{{ actividad.titulo || 'Sin título' }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                          <div class="text-sm text-gray-500">
+                            {{ actividad.descripcion || 'Sin descripción' }}
+                          </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                           <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            {{ actividad.tipo || actividad.dimension }}
+                            {{ actividad.tipo || actividad.dimension || 'No especificado' }}
                           </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -213,20 +219,208 @@ interface Tab {
                 </div>
               </div>
 
-              <!-- TAB 4: Notas (Preparado para futuras gráficas) -->
+              <!-- TAB 4: Notas - Formato Excel -->
               <div *ngIf="tabActual === 'notas'" class="space-y-6">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Análisis de Notas</h2>
-                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                  <div class="flex">
-                    <svg class="w-5 h-5 text-blue-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                <div class="flex justify-between items-center mb-4">
+                  <h2 class="text-2xl font-semibold text-gray-800">Notas por Dimensión</h2>
+                  <div class="text-sm text-gray-600">
+                    Total: {{ getActividadesEntregadas().length }} actividades calificadas
+                  </div>
+                </div>
+
+                <!-- Leyenda de dimensiones -->
+                <div class="flex flex-wrap gap-3 mb-4">
+                  <div class="flex items-center px-3 py-1 rounded-full bg-purple-50 text-purple-700 text-sm">
+                    <div class="h-3 w-3 rounded-full bg-purple-500 mr-2"></div>
+                    Ser
+                  </div>
+                  <div class="flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm">
+                    <div class="h-3 w-3 rounded-full bg-blue-500 mr-2"></div>
+                    Saber
+                  </div>
+                  <div class="flex items-center px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-sm">
+                    <div class="h-3 w-3 rounded-full bg-yellow-500 mr-2"></div>
+                    Hacer
+                  </div>
+                  <div class="flex items-center px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm">
+                    <div class="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
+                    Decidir
+                  </div>
+                </div>
+                
+                <!-- Vista Excel de actividades entregadas -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                  <!-- Encabezado -->
+                  <div class="bg-gray-50 p-4 border-b border-gray-200">
+                    <h3 class="font-semibold text-gray-700">Reporte de Calificaciones</h3>
+                  </div>
+                  
+                  <!-- Sin actividades entregadas -->
+                  <div *ngIf="getActividadesEntregadas().length === 0" class="p-8 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                    <p class="text-blue-700">Las gráficas de notas estarán disponibles próximamente.</p>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No hay actividades calificadas</h3>
+                    <p class="mt-1 text-sm text-gray-500">No hay actividades con estado "Entregado" para mostrar.</p>
+                  </div>
+                  
+                  <!-- Tabla estilo Excel -->
+                  <div *ngIf="getActividadesEntregadas().length > 0" class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <!-- Primera columna para los títulos de actividades -->
+                          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actividad
+                          </th>
+                          
+                          <!-- Columnas para cada dimensión -->
+                          <th class="px-4 py-3 text-center text-xs font-medium text-purple-500 uppercase tracking-wider w-28 bg-purple-50">
+                            Ser
+                          </th>
+                          <th class="px-4 py-3 text-center text-xs font-medium text-blue-500 uppercase tracking-wider w-28 bg-blue-50">
+                            Saber
+                          </th>
+                          <th class="px-4 py-3 text-center text-xs font-medium text-yellow-500 uppercase tracking-wider w-28 bg-yellow-50">
+                            Hacer
+                          </th>
+                          <th class="px-4 py-3 text-center text-xs font-medium text-green-500 uppercase tracking-wider w-28 bg-green-50">
+                            Decidir
+                          </th>
+                          
+                          <!-- Columna final para fecha -->
+                          <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                            Fecha
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Filas para cada actividad entregada -->
+                        <tr *ngFor="let actividad of getActividadesEntregadas(); trackBy: trackByActividadId" 
+                            class="hover:bg-gray-50 transition-colors">
+                          
+                          <!-- Nombre de la actividad -->
+                          <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ actividad.titulo }}</div>
+                            <div class="text-sm text-gray-500" *ngIf="actividad.descripcion">
+                              {{ actividad.descripcion | slice:0:50 }}{{ actividad.descripcion.length > 50 ? '...' : '' }}
+                            </div>
+                          </td>
+                          
+                          <!-- Celdas para cada dimensión -->
+                          <td class="px-4 py-3 text-center" [ngClass]="{'bg-purple-50': actividad.dimension === 'ser'}">
+                            <span *ngIf="actividad.dimension === 'ser'" 
+                              class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                              [ngClass]="{
+                                'bg-green-100 text-green-800': actividad.nota >= 80,
+                                'bg-blue-100 text-blue-800': actividad.nota >= 70 && actividad.nota < 80,
+                                'bg-yellow-100 text-yellow-800': actividad.nota >= 60 && actividad.nota < 70,
+                                'bg-red-100 text-red-800': actividad.nota < 60
+                              }">
+                              {{ actividad.nota }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-center" [ngClass]="{'bg-blue-50': actividad.dimension === 'saber'}">
+                            <span *ngIf="actividad.dimension === 'saber'" 
+                              class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                              [ngClass]="{
+                                'bg-green-100 text-green-800': actividad.nota >= 80,
+                                'bg-blue-100 text-blue-800': actividad.nota >= 70 && actividad.nota < 80,
+                                'bg-yellow-100 text-yellow-800': actividad.nota >= 60 && actividad.nota < 70,
+                                'bg-red-100 text-red-800': actividad.nota < 60
+                              }">
+                              {{ actividad.nota }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-center" [ngClass]="{'bg-yellow-50': actividad.dimension === 'hacer'}">
+                            <span *ngIf="actividad.dimension === 'hacer'" 
+                              class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                              [ngClass]="{
+                                'bg-green-100 text-green-800': actividad.nota >= 80,
+                                'bg-blue-100 text-blue-800': actividad.nota >= 70 && actividad.nota < 80,
+                                'bg-yellow-100 text-yellow-800': actividad.nota >= 60 && actividad.nota < 70,
+                                'bg-red-100 text-red-800': actividad.nota < 60
+                              }">
+                              {{ actividad.nota }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-center" [ngClass]="{'bg-green-50': actividad.dimension === 'decidir'}">
+                            <span *ngIf="actividad.dimension === 'decidir'" 
+                              class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                              [ngClass]="{
+                                'bg-green-100 text-green-800': actividad.nota >= 80,
+                                'bg-blue-100 text-blue-800': actividad.nota >= 70 && actividad.nota < 80,
+                                'bg-yellow-100 text-yellow-800': actividad.nota >= 60 && actividad.nota < 70,
+                                'bg-red-100 text-red-800': actividad.nota < 60
+                              }">
+                              {{ actividad.nota }}
+                            </span>
+                          </td>
+                          
+                          <!-- Fecha de la actividad -->
+                          <td class="px-4 py-3 text-center text-sm text-gray-500">
+                            {{ formatearFecha(actividad.fecha_entrega || actividad.fecha_creacion) }}
+                          </td>
+                        </tr>
+                        
+                        <!-- NUEVA FILA: Asistencia (se coloca antes de los promedios) -->
+                        <tr class="bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <td class="px-4 py-3 text-sm text-gray-700 font-medium">
+                            Asistencia
+                          </td>
+                          <td class="px-4 py-3 text-center bg-purple-50">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                  [ngClass]="{
+                                    'bg-green-100 text-green-800': calcularNotaAsistencia() >= 80,
+                                    'bg-blue-100 text-blue-800': calcularNotaAsistencia() >= 70 && calcularNotaAsistencia() < 80,
+                                    'bg-yellow-100 text-yellow-800': calcularNotaAsistencia() >= 60 && calcularNotaAsistencia() < 70,
+                                    'bg-red-100 text-red-800': calcularNotaAsistencia() < 60
+                                  }">
+                              {{ calcularNotaAsistencia() }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-center"></td>
+                          <td class="px-4 py-3 text-center"></td>
+                          <td class="px-4 py-3 text-center"></td>
+                          <td class="px-4 py-3 text-center text-sm text-gray-500">
+                            {{ formatearFecha(new Date().toISOString()) }}
+                          </td>
+                        </tr>
+                        
+                        <!-- Fila de promedios -->
+                        <tr class="bg-gray-50 font-medium">
+                          <td class="px-4 py-3 text-sm text-gray-700">
+                            Promedio por dimensión
+                          </td>
+                          <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                              {{ calcularPromedioPorDimension('ser', true) }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {{ calcularPromedioPorDimension('saber') }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                              {{ calcularPromedioPorDimension('hacer') }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              {{ calcularPromedioPorDimension('decidir') }}
+                            </span>
+                          </td>
+                          
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
 
-              <!-- TAB 5: Análisis (Preparado para futuras métricas) -->
+              <!-- TAB 5: Análisis (sin cambios) -->
               <div *ngIf="tabActual === 'analisis'" class="space-y-6">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-4">Análisis Predictivo</h2>
                 <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded">
@@ -241,6 +435,19 @@ interface Tab {
 
             </div>
           </div>
+        </div>
+
+        <!-- Predicción de nota final -->
+        <div class="mt-8 bg-blue-50 rounded-lg p-4 flex items-center gap-4">
+          <button (click)="predecirNotaFinal()" 
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
+                  [disabled]="cargandoPrediccion">
+            Predecir Nota Final
+          </button>
+          <span *ngIf="cargandoPrediccion" class="text-blue-700">Calculando predicción...</span>
+          <span *ngIf="prediccionNota && !cargandoPrediccion" class="text-blue-900 font-bold">
+            Predicción de Nota: {{ prediccionNota }}
+          </span>
         </div>
       </main>
     </div>
@@ -305,10 +512,14 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
     }
   ];
 
+  prediccionNota: string | null = null;
+  cargandoPrediccion = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private alumnoService: AlumnoService
+    private alumnoService: AlumnoService,
+    private http: HttpClient // 👈 Agrega HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -393,5 +604,127 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
 
   volver(): void {
     this.router.navigate(['/mi-rendimiento']);
+  }
+
+  // Nuevos métodos para el componente
+
+  // Obtener solo actividades entregadas
+  getActividadesEntregadas(): any[] {
+    return this.actividades.filter(actividad => 
+      actividad.estado === 'Entregado' || actividad.entregado === true
+    );
+  }
+
+  // Nuevos métodos para manejo de asistencia
+
+  // Calcular la nota de asistencia
+  calcularNotaAsistencia(): number {
+    // Si el porcentaje ya viene calculado, lo usamos directamente
+    if (this.asistencia.porcentaje !== undefined && this.asistencia.porcentaje !== null) {
+      return this.asistencia.porcentaje;
+    }
+    
+    // Si hay que calcularlo
+    if (this.asistencia.total_clases && this.asistencia.total_clases > 0) {
+      const porcentaje = (this.asistencia.clases_asistidas / this.asistencia.total_clases) * 100;
+      return Math.round(porcentaje);
+    }
+    
+    // Si no hay datos suficientes, devolvemos 100%
+    return 100;
+  }
+
+  // Calcular promedio por dimensión incluyendo asistencia
+  calcularPromedioPorDimension(dimension: string, incluirAsistencia: boolean = false): string {
+    const actividadesDimension = this.getActividadesEntregadas().filter(
+      act => act.dimension?.toLowerCase() === dimension.toLowerCase()
+    );
+    
+    // Lista de calificaciones
+    let calificaciones: number[] = [];
+    
+    // Agregar notas de actividades
+    actividadesDimension.forEach(act => {
+      if (act.nota !== undefined && act.nota !== null) {
+        calificaciones.push(Number(act.nota));
+      }
+    });
+    
+    // Agregar nota de asistencia en dimensión "ser" si se solicita
+    if (dimension === 'ser' && incluirAsistencia) {
+      calificaciones.push(this.calcularNotaAsistencia());
+    }
+    
+    // Calcular promedio
+    if (calificaciones.length === 0) {
+      return 'N/A';
+    }
+    
+    const suma = calificaciones.reduce((acc, nota) => acc + nota, 0);
+    return (suma / calificaciones.length).toFixed(1);
+  }
+
+  // Calcular promedio general incluyendo asistencia
+  calcularPromedioGeneral(incluirAsistencia: boolean = false): string {
+    const actividadesEntregadas = this.getActividadesEntregadas();
+    const calificaciones: number[] = [];
+    
+    // Agregar notas de actividades
+    actividadesEntregadas.forEach(act => {
+      if (act.nota !== undefined && act.nota !== null) {
+        calificaciones.push(Number(act.nota));
+      }
+    });
+    
+    // Agregar nota de asistencia si se solicita
+    if (incluirAsistencia) {
+      calificaciones.push(this.calcularNotaAsistencia());
+    }
+    
+    // Calcular promedio
+    if (calificaciones.length === 0) {
+      return 'N/A';
+    }
+    
+    const suma = calificaciones.reduce((acc, nota) => acc + nota, 0);
+    return (suma / calificaciones.length).toFixed(1);
+  }
+
+  // Llama a la predicción de nota
+  predecirNotaFinal(): void {
+    this.cargandoPrediccion = true;
+    this.prediccionNota = null;
+
+    // Calcula los promedios por dimensión
+    const ser = Number(this.calcularPromedioPorDimension('ser'));
+    const saber = Number(this.calcularPromedioPorDimension('saber'));
+    const hacer = Number(this.calcularPromedioPorDimension('hacer'));
+    const decidir = Number(this.calcularPromedioPorDimension('decidir'));
+
+    // Construye el payload solo con los campos > 0 y que no sean NaN
+    const payload: any = {};
+    if (!isNaN(ser) && ser > 0) payload.ser = ser;
+    if (!isNaN(saber) && saber > 0) payload.saber = saber;
+    if (!isNaN(hacer) && hacer > 0) payload.hacer = hacer;
+    if (!isNaN(decidir) && decidir > 0) payload.decidir = decidir;
+
+    if (Object.keys(payload).length === 0) {
+      this.prediccionNota = 'No hay datos suficientes para predecir.';
+      this.cargandoPrediccion = false;
+      return;
+    }
+
+    this.http.post<any>('http://127.0.0.1:8000/api/predecir/', payload)
+      .subscribe({
+        next: (resp) => {
+          // Toma el campo nota_final_estimada del response
+          this.prediccionNota = resp.nota_final_estimada !== undefined ? resp.nota_final_estimada.toFixed(2) : 'Sin resultado';
+          this.cargandoPrediccion = false;
+        },
+        error: () => {
+          this.prediccionNota = 'Error al obtener la predicción';
+          this.cargandoPrediccion = false;
+        }
+      });
   }
 }

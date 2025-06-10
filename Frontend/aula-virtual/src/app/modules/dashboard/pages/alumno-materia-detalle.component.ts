@@ -417,6 +417,19 @@ interface Tab {
                       </tbody>
                     </table>
                   </div>
+
+                            <!-- Predicción de nota final -->
+                  <div class="mt-8 bg-blue-50 rounded-lg p-4 flex items-center gap-4">
+                    <button (click)="predecirNotaFinal()" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
+                            [disabled]="cargandoPrediccion">
+                      Predecir Nota Final
+                    </button>
+                    <span *ngIf="cargandoPrediccion" class="text-blue-700">Calculando predicción...</span>
+                    <span *ngIf="prediccionNota && !cargandoPrediccion" class="text-blue-900 font-bold">
+                      Predicción de Nota: {{ prediccionNota }}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -437,18 +450,7 @@ interface Tab {
           </div>
         </div>
 
-        <!-- Predicción de nota final -->
-        <div class="mt-8 bg-blue-50 rounded-lg p-4 flex items-center gap-4">
-          <button (click)="predecirNotaFinal()" 
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold transition"
-                  [disabled]="cargandoPrediccion">
-            Predecir Nota Final
-          </button>
-          <span *ngIf="cargandoPrediccion" class="text-blue-700">Calculando predicción...</span>
-          <span *ngIf="prediccionNota && !cargandoPrediccion" class="text-blue-900 font-bold">
-            Predicción de Nota: {{ prediccionNota }}
-          </span>
-        </div>
+        
       </main>
     </div>
   `,

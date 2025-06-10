@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'secrets',
     'actividad',
     'prediccion_notas',
+    #'actividad.apps.ActividadConfig',
 ]
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
@@ -170,3 +171,20 @@ SIMPLE_JWT = {
 CSRF_COOKIE_SECURE = False
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'actividad.signals': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

@@ -29,16 +29,13 @@ jobs:
           python -m venv venv
           source venv/bin/activate
       
-      # Cambiar el directorio de trabajo al Backend antes de instalar dependencias
       - name: Install dependencies
-        working-directory: ./Backend
         run: |
-          source ../venv/bin/activate
+          source venv/bin/activate
           pip install -r requirements.txt
       
       - name: Zip artifact for deployment
-        working-directory: ./Backend
-        run: zip -r ../release.zip . -x "venv/*" "__pycache__/*" "*.pyc"
+        run: zip -r release.zip . -x "venv/*" "__pycache__/*" "*.pyc" ".git/*" ".github/*"
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4

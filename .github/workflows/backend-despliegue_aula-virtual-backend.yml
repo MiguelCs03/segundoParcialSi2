@@ -29,6 +29,22 @@ jobs:
           python -m venv venv
           source venv/bin/activate
       
+      - name: Debug - List all files in root
+        run: |
+          echo "=== Current directory ==="
+          pwd
+          echo "=== All files and directories ==="
+          ls -la
+          echo "=== Looking for requirements.txt specifically ==="
+          find . -name "requirements.txt" -type f
+          echo "=== Contents of any requirements.txt found ==="
+          if [ -f requirements.txt ]; then
+            echo "Found requirements.txt in root:"
+            cat requirements.txt
+          else
+            echo "No requirements.txt found in root"
+          fi
+
       - name: Install dependencies
         run: |
           source venv/bin/activate

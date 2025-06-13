@@ -1,7 +1,9 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ChartType, ChartData, ChartOptions } from 'chart.js';
-import { BaseChartDirective } from 'ng2-charts';
+import { Chart, ChartConfiguration, ChartData, registerables } from 'chart.js';
+
+// Registrar todos los componentes de Chart.js
+Chart.register(...registerables);
 
 interface Actividad {
   id?: number;
@@ -19,7 +21,7 @@ interface Actividad {
 @Component({
   selector: 'app-notas-grafico',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective],
+  imports: [CommonModule],
   template: `
     <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg p-6 border border-gray-100">
       <!-- Header con estadísticas y controles -->
@@ -53,7 +55,7 @@ interface Actividad {
         <div class="flex items-center justify-center mb-4">
           <div class="bg-gray-100 rounded-lg p-1 flex">
             <button 
-              (click)="mostrarPorActividad = false"
+              (click)="mostrarPorActividad = false; actualizarGrafico()"
               [class]="!mostrarPorActividad ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-600'"
               class="px-4 py-2 rounded-md text-sm transition-all duration-200 flex items-center">
               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,7 +64,7 @@ interface Actividad {
               Por Tiempo
             </button>
             <button 
-              (click)="mostrarPorActividad = true"
+              (click)="mostrarPorActividad = true; actualizarGrafico()"
               [class]="mostrarPorActividad ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-600'"
               class="px-4 py-2 rounded-md text-sm transition-all duration-200 flex items-center">
               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,12 +163,9 @@ interface Actividad {
       <!-- Gráfico -->
       <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100 mb-4" 
            *ngIf="actividadesValidas.length > 0; else noDataTemplate">
-        <canvas baseChart
-          [data]="lineChartData"
-          [options]="lineChartOptions"
-          [type]="lineChartType"
-          class="w-full"
-          [style.height.px]="altura">
+        <canvas #chartCanvas 
+                class="w-full"
+                [style.height.px]="altura">
         </canvas>
       </div>
 
@@ -265,89 +264,39 @@ interface Actividad {
     </div>
   `
 })
-export class NotasGraficoComponent implements OnChanges {
+export class NotasGraficoComponent implements OnChanges, AfterViewInit, OnDestroy {
   @Input() actividades: Actividad[] = [];
-  @Input() mostrarPorActividad: boolean = false; // Nueva propiedad para alternar vista
-  @Input() altura: number = 400; // Altura personalizable
+  @Input() mostrarPorActividad: boolean = false;
+  @Input() altura: number = 400;
+  
+  @ViewChild('chartCanvas', { static: true }) chartCanvas!: ElementRef<HTMLCanvasElement>;
+  private chart?: Chart;
   
   actividadesValidas: Actividad[] = [];
-  lineChartType: ChartType = 'line';
   mejorDimension: string = '';
   peorDimension: string = '';
   tendencia: 'ascendente' | 'descendente' | 'estable' = 'estable';
   promedioGeneral: number = 0;
 
-  lineChartOptions: ChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      intersect: false,
-      mode: 'index'
-    },
-    plugins: {
-      legend: { 
-        display: false // Ocultamos la leyenda por defecto ya que tenemos una personalizada
-      },
-      tooltip: { 
-        enabled: true,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: '#e5e7eb',
-        borderWidth: 1,
-        cornerRadius: 8,
-        displayColors: true,
-        callbacks: {
-          title: (context) => `Fecha: ${context[0].label}`,
-          label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
-        }
-      }
-    },
-    scales: {
-      y: {
-        min: 0,
-        max: 100,
-        title: { 
-          display: true, 
-          text: 'Nota (%)',
-          font: { weight: 'bold' }
-        },
-        grid: {
-          color: 'rgba(0, 0, 0, 0.05)'
-        },
-        ticks: {
-          callback: function(value) {
-            return value + '%';
-          }
-        }
-      },
-      x: {
-        title: { 
-          display: true, 
-          text: 'Fecha de Entrega',
-          font: { weight: 'bold' }
-        },
-        grid: {
-          color: 'rgba(0, 0, 0, 0.05)'
-        }
-      }
-    },
-    elements: {
-      line: {
-        borderWidth: 3
-      },
-      point: {
-        radius: 6,
-        hoverRadius: 8,
-        borderWidth: 2
-      }
-    }
-  };
+  ngAfterViewInit(): void {
+    this.actualizarActividadesValidas();
+    this.calcularEstadisticas();
+    this.crearGrafico();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['actividades']) {
       this.actualizarActividadesValidas();
-      this.calcularEstadisticas(); // Agregada esta línea
+      this.calcularEstadisticas();
+      if (this.chart) {
+        this.actualizarGrafico();
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.chart) {
+      this.chart.destroy();
     }
   }
 
@@ -357,152 +306,27 @@ export class NotasGraficoComponent implements OnChanges {
     );
   }
 
-  // 1. Método para obtener la clase CSS según el promedio
-  getColorClasePromedio(promedio: number): string {
-    if (promedio >= 90) return 'text-green-600';
-    if (promedio >= 80) return 'text-blue-600';
-    if (promedio >= 70) return 'text-yellow-600';
-    if (promedio >= 60) return 'text-orange-600';
-    return 'text-red-600';
-  }
+  private crearGrafico(): void {
+    if (!this.chartCanvas?.nativeElement || this.actividadesValidas.length === 0) return;
 
-  // 2. Método para obtener la tendencia de una dimensión específica
-  getTendenciaDimension(dimension: string): 'ascendente' | 'descendente' | 'estable' {
-    const actividadesDimension = this.actividadesValidas
-      .filter(a => a.dimension === dimension)
-      .sort((a, b) => {
-        const fechaA = new Date(a.fecha_entrega || a.fecha_creacion || '').getTime();
-        const fechaB = new Date(b.fecha_entrega || b.fecha_creacion || '').getTime();
-        return fechaA - fechaB;
-      });
+    const ctx = this.chartCanvas.nativeElement.getContext('2d');
+    if (!ctx) return;
 
-    if (actividadesDimension.length < 2) return 'estable';
-
-    const primera = actividadesDimension[0].nota;
-    const ultima = actividadesDimension[actividadesDimension.length - 1].nota;
-    const diferencia = ultima - primera;
-
-    if (diferencia > 5) return 'ascendente';
-    if (diferencia < -5) return 'descendente';
-    return 'estable';
-  }
-
-  // 3. Método para obtener el ícono de tendencia
-  getTendenciaIcon(tendencia: 'ascendente' | 'descendente' | 'estable'): string {
-    switch (tendencia) {
-      case 'ascendente':
-        return '<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>';
-      case 'descendente':
-        return '<svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
-      default:
-        return '<svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>';
-    }
-  }
-
-  // 4. Método para obtener la clase CSS de la tendencia
-  getTendenciaColorClass(): string {
-    switch (this.tendencia) {
-      case 'ascendente': return 'text-green-600 font-semibold';
-      case 'descendente': return 'text-red-600 font-semibold';
-      default: return 'text-gray-600 font-semibold';
-    }
-  }
-
-  // 5. Método para obtener el texto de la tendencia
-  getTendenciaTexto(): string {
-    switch (this.tendencia) {
-      case 'ascendente': return 'En Mejora';
-      case 'descendente': return 'En Declive';
-      default: return 'Estable';
-    }
-  }
-
-  // 6. Método para obtener el análisis de tendencia
-  getAnalisisTendencia(): string {
-    const totalActividades = this.actividadesValidas.length;
-    
-    switch (this.tendencia) {
-      case 'ascendente':
-        return `Las notas han mostrado una mejora consistente en las últimas ${totalActividades} actividades.`;
-      case 'descendente':
-        return `Se observa una tendencia decreciente en las últimas ${totalActividades} actividades que requiere atención.`;
-      default:
-        return `El rendimiento se ha mantenido relativamente estable en las últimas ${totalActividades} actividades.`;
-    }
-  }
-
-  // 7. Método para calcular las dimensiones mejor y peor
-  private calcularEstadisticas(): void {
-    if (this.actividadesValidas.length === 0) return;
-
-    // Calcular promedios por dimensión
-    const dimensiones = ['ser', 'saber', 'hacer', 'decidir'];
-    const promedios: { [key: string]: number } = {};
-
-    dimensiones.forEach(dim => {
-      const promedio = parseFloat(this.getPromedioDimension(dim));
-      promedios[dim] = promedio;
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: this.getChartData(),
+      options: this.getChartOptions()
     });
+  }
 
-    // Encontrar mejor y peor dimensión
-    const dimensionesConDatos = Object.entries(promedios).filter(([_, promedio]) => promedio > 0);
+  public actualizarGrafico(): void {
+    if (!this.chart) return;
     
-    if (dimensionesConDatos.length > 0) {
-      this.mejorDimension = dimensionesConDatos.reduce((a, b) => a[1] > b[1] ? a : b)[0];
-      this.peorDimension = dimensionesConDatos.reduce((a, b) => a[1] < b[1] ? a : b)[0];
-    }
-
-    // Calcular promedio general
-    const todasLasNotas = this.actividadesValidas.map(a => a.nota);
-    this.promedioGeneral = Math.round(
-      todasLasNotas.reduce((sum, nota) => sum + nota, 0) / todasLasNotas.length
-    );
-
-    // Calcular tendencia general
-    this.calcularTendenciaGeneral();
+    this.chart.data = this.getChartData();
+    this.chart.update();
   }
 
-  // 8. Método para calcular tendencia general
-  private calcularTendenciaGeneral(): void {
-    if (this.actividadesValidas.length < 3) {
-      this.tendencia = 'estable';
-      return;
-    }
-
-    const actividadesOrdenadas = [...this.actividadesValidas]
-      .sort((a, b) => {
-        const fechaA = new Date(a.fecha_entrega || a.fecha_creacion || '').getTime();
-        const fechaB = new Date(b.fecha_entrega || b.fecha_creacion || '').getTime();
-        return fechaA - fechaB;
-      });
-
-    // Tomar las primeras y últimas 3 actividades para comparar
-    const primeras = actividadesOrdenadas.slice(0, 3);
-    const ultimas = actividadesOrdenadas.slice(-3);
-
-    const promedioPrimeras = primeras.reduce((sum, a) => sum + a.nota, 0) / primeras.length;
-    const promedioUltimas = ultimas.reduce((sum, a) => sum + a.nota, 0) / ultimas.length;
-
-    const diferencia = promedioUltimas - promedioPrimeras;
-
-    if (diferencia > 5) this.tendencia = 'ascendente';
-    else if (diferencia < -5) this.tendencia = 'descendente';
-    else this.tendencia = 'estable';
-  }
-
-  getPromedioDimension(dimension: string): string {
-    const actividadesDimension = this.actividadesValidas.filter(a => a.dimension === dimension);
-    if (actividadesDimension.length === 0) return '0';
-    
-    const suma = actividadesDimension.reduce((acc, act) => acc + act.nota, 0);
-    return Math.round(suma / actividadesDimension.length).toString();
-  }
-
-  getContadorDimension(dimension: string): number {
-    return this.actividadesValidas.filter(a => a.dimension === dimension).length;
-  }
-
-  get lineChartData(): ChartData<'line'> {
+  private getChartData(): ChartData<'line'> {
     if (this.actividadesValidas.length === 0) {
       return { labels: [], datasets: [] };
     }
@@ -529,7 +353,7 @@ export class NotasGraficoComponent implements OnChanges {
       )
     );
 
-    // Helper mejorado para obtener notas por dimensión
+    // Helper para obtener notas por dimensión
     const getNotasPorDimension = (dimension: string) =>
       fechasUnicas.map(fecha => {
         const actividad = actividadesOrdenadas.find(a => {
@@ -607,5 +431,212 @@ export class NotasGraficoComponent implements OnChanges {
       labels: fechasUnicas,
       datasets
     };
+  }
+
+  private getChartOptions(): ChartConfiguration<'line'>['options'] {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      plugins: {
+        legend: { 
+          display: false
+        },
+        tooltip: { 
+          enabled: true,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#e5e7eb',
+          borderWidth: 1,
+          cornerRadius: 8,
+          displayColors: true,
+          callbacks: {
+            title: (context) => `Fecha: ${context[0].label}`,
+            label: (context) => `${context.dataset.label}: ${context.parsed.y}%`
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          title: { 
+            display: true, 
+            text: 'Nota (%)',
+            font: { weight: 'bold' }
+          },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)'
+          },
+          ticks: {
+            callback: function(value) {
+              return value + '%';
+            }
+          }
+        },
+        x: {
+          title: { 
+            display: true, 
+            text: 'Fecha de Entrega',
+            font: { weight: 'bold' }
+          },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)'
+          }
+        }
+      },
+      elements: {
+        line: {
+          borderWidth: 3
+        },
+        point: {
+          radius: 6,
+          hoverRadius: 8,
+          borderWidth: 2
+        }
+      }
+    };
+  }
+
+  // Métodos auxiliares (conservados del código original)
+  getColorClasePromedio(promedio: number): string {
+    if (promedio >= 90) return 'text-green-600';
+    if (promedio >= 80) return 'text-blue-600';
+    if (promedio >= 70) return 'text-yellow-600';
+    if (promedio >= 60) return 'text-orange-600';
+    return 'text-red-600';
+  }
+
+  getTendenciaDimension(dimension: string): 'ascendente' | 'descendente' | 'estable' {
+    const actividadesDimension = this.actividadesValidas
+      .filter(a => a.dimension === dimension)
+      .sort((a, b) => {
+        const fechaA = new Date(a.fecha_entrega || a.fecha_creacion || '').getTime();
+        const fechaB = new Date(b.fecha_entrega || b.fecha_creacion || '').getTime();
+        return fechaA - fechaB;
+      });
+
+    if (actividadesDimension.length < 2) return 'estable';
+
+    const primera = actividadesDimension[0].nota;
+    const ultima = actividadesDimension[actividadesDimension.length - 1].nota;
+    const diferencia = ultima - primera;
+
+    if (diferencia > 5) return 'ascendente';
+    if (diferencia < -5) return 'descendente';
+    return 'estable';
+  }
+
+  getTendenciaIcon(tendencia: 'ascendente' | 'descendente' | 'estable'): string {
+    switch (tendencia) {
+      case 'ascendente':
+        return '<svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>';
+      case 'descendente':
+        return '<svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>';
+      default:
+        return '<svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>';
+    }
+  }
+
+  getTendenciaColorClass(): string {
+    switch (this.tendencia) {
+      case 'ascendente': return 'text-green-600 font-semibold';
+      case 'descendente': return 'text-red-600 font-semibold';
+      default: return 'text-gray-600 font-semibold';
+    }
+  }
+
+  getTendenciaTexto(): string {
+    switch (this.tendencia) {
+      case 'ascendente': return 'En Mejora';
+      case 'descendente': return 'En Declive';
+      default: return 'Estable';
+    }
+  }
+
+  getAnalisisTendencia(): string {
+    const totalActividades = this.actividadesValidas.length;
+    
+    switch (this.tendencia) {
+      case 'ascendente':
+        return `Las notas han mostrado una mejora consistente en las últimas ${totalActividades} actividades.`;
+      case 'descendente':
+        return `Se observa una tendencia decreciente en las últimas ${totalActividades} actividades que requiere atención.`;
+      default:
+        return `El rendimiento se ha mantenido relativamente estable en las últimas ${totalActividades} actividades.`;
+    }
+  }
+
+  private calcularEstadisticas(): void {
+    if (this.actividadesValidas.length === 0) return;
+
+    // Calcular promedios por dimensión
+    const dimensiones = ['ser', 'saber', 'hacer', 'decidir'];
+    const promedios: { [key: string]: number } = {};
+
+    dimensiones.forEach(dim => {
+      const promedio = parseFloat(this.getPromedioDimension(dim));
+      promedios[dim] = promedio;
+    });
+
+    // Encontrar mejor y peor dimensión
+    const dimensionesConDatos = Object.entries(promedios).filter(([_, promedio]) => promedio > 0);
+    
+    if (dimensionesConDatos.length > 0) {
+      this.mejorDimension = dimensionesConDatos.reduce((a, b) => a[1] > b[1] ? a : b)[0];
+      this.peorDimension = dimensionesConDatos.reduce((a, b) => a[1] < b[1] ? a : b)[0];
+    }
+
+    // Calcular promedio general
+    const todasLasNotas = this.actividadesValidas.map(a => a.nota);
+    this.promedioGeneral = Math.round(
+      todasLasNotas.reduce((sum, nota) => sum + nota, 0) / todasLasNotas.length
+    );
+
+    // Calcular tendencia general
+    this.calcularTendenciaGeneral();
+  }
+
+  private calcularTendenciaGeneral(): void {
+    if (this.actividadesValidas.length < 3) {
+      this.tendencia = 'estable';
+      return;
+    }
+
+    const actividadesOrdenadas = [...this.actividadesValidas]
+      .sort((a, b) => {
+        const fechaA = new Date(a.fecha_entrega || a.fecha_creacion || '').getTime();
+        const fechaB = new Date(b.fecha_entrega || b.fecha_creacion || '').getTime();
+        return fechaA - fechaB;
+      });
+
+    // Tomar las primeras y últimas 3 actividades para comparar
+    const primeras = actividadesOrdenadas.slice(0, 3);
+    const ultimas = actividadesOrdenadas.slice(-3);
+
+    const promedioPrimeras = primeras.reduce((sum, a) => sum + a.nota, 0) / primeras.length;
+    const promedioUltimas = ultimas.reduce((sum, a) => sum + a.nota, 0) / ultimas.length;
+
+    const diferencia = promedioUltimas - promedioPrimeras;
+
+    if (diferencia > 5) this.tendencia = 'ascendente';
+    else if (diferencia < -5) this.tendencia = 'descendente';
+    else this.tendencia = 'estable';
+  }
+
+  getPromedioDimension(dimension: string): string {
+    const actividadesDimension = this.actividadesValidas.filter(a => a.dimension === dimension);
+    if (actividadesDimension.length === 0) return '0';
+    
+    const suma = actividadesDimension.reduce((acc, act) => acc + act.nota, 0);
+    return Math.round(suma / actividadesDimension.length).toString();
+  }
+
+  getContadorDimension(dimension: string): number {
+    return this.actividadesValidas.filter(a => a.dimension === dimension).length;
   }
 }

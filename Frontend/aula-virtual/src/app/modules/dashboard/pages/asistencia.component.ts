@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProfesorService } from '../../../core/services/profesor.sevice';
-import { CommonModule, NgFor, NgIf } from '@angular/common';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   standalone: true,
   selector: 'app-asistencia',
-  imports: [CommonModule, FormsModule, NgFor, NgIf],
+  imports: [CommonModule, FormsModule],
   template: `
     <nav class="bg-indigo-600 p-4 text-white flex justify-between items-center">
       <button (click)="volver()" class="hover:bg-indigo-700 px-3 py-1 rounded">
@@ -76,33 +77,27 @@ export default class AsistenciaComponent implements OnInit {
 
   ngOnInit(): void {
     this.detalleId = Number(this.route.snapshot.paramMap.get('id'));
-
-    // NUEVO: Consultar si ya hay asistencias tomadas hoy
-    this.profesorService.obtenerAsistenciaPorFecha(this.detalleId).subscribe({
-      next: (res) => {
-        if (res.asistencias && res.asistencias.length > 0) {
-          this.asistenciasRegistradas = true;
-          this.fechaAsistencia = res.fecha;
-          this.asistenciasExistentes = res.asistencias;
-        } else {
-          this.cargarEstudiantesParaAsistencia();
-        }
-      },
-      error: (err) => {
-        console.error(err);
-        this.cargarEstudiantesParaAsistencia();
-      }
-    });
-  }
-
-  // NUEVO: carga estudiantes para mostrar el formulario
-  cargarEstudiantesParaAsistencia(): void {
+    this.verificarAsistenciaHoy();
     this.profesorService.getEstudiantesDeMateria(this.detalleId).subscribe(data => {
       this.estudiantes = data;
       this.asistencias = data.map((e: any) => ({
         libreta_id: e.libreta_id,
         presente: false,
       }));
+    });
+  }
+
+  // NUEVO: Verificar si ya se tomó asistencia hoy
+  verificarAsistenciaHoy(): void {
+    this.profesorService.obtenerAsistenciaPorFecha(this.detalleId).subscribe({
+      next: (res) => {
+        if (res.asistencias && res.asistencias.length > 0) {
+          this.asistenciasRegistradas = true;
+          this.fechaAsistencia = res.fecha;
+          this.asistenciasExistentes = res.asistencias;
+        }
+      },
+      error: (err) => console.error(err)
     });
   }
 

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { SidebarComponent } from '../components/sidebar.component';
 import { NgIf, NgFor } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -99,17 +100,17 @@ export class MateriaDetalleComponent implements OnInit {
   constructor(private route: ActivatedRoute, private http: HttpClient, private router: Router) {}
 
   ngOnInit(): void {
-    this.detalleId = +this.route.snapshot.paramMap.get('id')!;
+    this.detalleId = Number(this.route.snapshot.paramMap.get('id'));
     this.cargarEstudiantes();
-    this.obtenerActividades();
+    this.cargarActividades();
   }
 
-  cargarEstudiantes() {
+  cargarEstudiantes(): void {
     const token = localStorage.getItem('access_token');
     const headers = { Authorization: `Bearer ${token}` };
 
     this.http
-      .get<any[]>(`http://127.0.0.1:8000/api/profesor/materia/${this.detalleId}/estudiantes/`, { headers })
+      .get<any[]>(environment.apiUrl + `api/profesor/materia/${this.detalleId}/estudiantes/`, { headers })
       .subscribe({
         next: (data) => {
           this.estudiantes = data;
@@ -120,12 +121,12 @@ export class MateriaDetalleComponent implements OnInit {
       });
   }
 
-  obtenerActividades() {
+  cargarActividades(): void {
     const token = localStorage.getItem('access_token');
     const headers = { Authorization: `Bearer ${token}` };
 
     this.http
-      .get<any[]>(`http://127.0.0.1:8000/api/profesor/materia/${this.detalleId}/actividades/`, { headers })
+      .get<any[]>(environment.apiUrl + `api/profesor/materia/${this.detalleId}/actividades/`, { headers })
       .subscribe({
         next: (data) => {
           this.actividades = data;

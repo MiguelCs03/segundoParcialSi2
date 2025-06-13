@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   standalone: true,
@@ -79,7 +80,7 @@ export class CalificarActividadComponent implements OnInit {
     const headers = { Authorization: `Bearer ${token}` };
 
     this.http
-      .get<any[]>(`http://127.0.0.1:8000/api/profesor/materia/${this.detalleId}/actividad/${this.actividadId}/entregas/`, { headers })
+      .get<any[]>(environment.apiUrl + `api/profesor/materia/${this.detalleId}/actividad/${this.actividadId}/entregas/`, { headers })
       .subscribe({
         next: (data) => {
           this.entregas = data.map(e => ({
@@ -106,7 +107,7 @@ export class CalificarActividadComponent implements OnInit {
     }));
 
     this.http
-      .post(`http://127.0.0.1:8000/api/actividades/${this.actividadId}/registrar-entregas/`, payload, { headers })
+      .post(environment.apiUrl + `api/actividades/${this.actividadId}/registrar-entregas/`, payload, { headers })
       .subscribe({
         next: () => alert('Calificaciones guardadas correctamente'),
         error: (err) => console.error('Error al guardar calificaciones:', err),

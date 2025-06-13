@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
-
+import { environment } from '../../../environments/environment';
 export interface Usuario {
   id: number;
   nombre: string;
@@ -31,7 +31,7 @@ export class SessionService {
 
   login(codigo: string, password: string) {
     return this.http.post<{ access: string; refresh: string; usuario: Usuario }>(
-      'http://127.0.0.1:8000/api/login/',
+      environment.apiUrl+'api/login/',
       { codigo, password }
     ).pipe(
       tap((resp) => {

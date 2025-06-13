@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   standalone: true,
@@ -78,11 +79,7 @@ export class CrearActividadComponent {
     const headers = { Authorization: `Bearer ${token}` };
 
     this.http
-      .post(
-        `http://127.0.0.1:8000/api/profesor/materia/${this.detalleId}/crear-actividad/`,
-        this.actividad,
-        { headers }
-      )
+      .post(environment.apiUrl + `api/actividades/`, this.actividad, { headers })
       .subscribe({
         next: () => {
           alert('Actividad creada correctamente');

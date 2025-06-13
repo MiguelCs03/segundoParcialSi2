@@ -7,14 +7,30 @@ For more information on this file, see
 https://docs.djangoproject.com/en/4.x/topics/settings/
 
 """
-
+import json
 import os
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+import firebase_admin
+from firebase_admin import credentials
 
 load_dotenv()
-FIREBASE_CREDENTIALS = os.getenv("FIREBASE_CREDENTIALS")
+firebase_creds_string = os.getenv("FIREBASE_CREDENTIALS")
+if firebase_creds_string:
+    try:
+        # Convertir el string JSON a diccionario
+        firebase_creds_dict = json.loads(firebase_creds_string)
+        cred = credentials.Certificate(firebase_creds_dict)
+        firebase_admin.initialize_app(cred)
+        print("✅ Firebase inicializado correctamente")
+    except json.JSONDecodeError:
+        print("❌ Error al parsear las credenciales de Firebase")
+    except Exception as e:
+        print(f"❌ Error al inicializar Firebase: {e}")
+else:
+    print("❌ No se encontraron las credenciales de Firebase")
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -100,17 +116,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Backend.wsgi.application'
 
-# Database
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', 'colegio_db'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'colegio_db',
+        'USER': 'colegio_db',
+        'PASSWORD': 'colegio_db',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';  // Importa Router
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   standalone: true,
@@ -43,25 +44,34 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 })
 export class ReporteEntregasComponent implements OnInit {
   detalleId!: number;
-  estudiantes: any[] = [];
   actividades: string[] = [];
+  estudiantes: any[] = [];
 
   constructor(private route: ActivatedRoute, private http: HttpClient, private router: Router) {}
 
-  ngOnInit() {
-    this.detalleId = +this.route.snapshot.paramMap.get('id')!;
+  ngOnInit(): void {
+    this.detalleId = Number(this.route.snapshot.paramMap.get('id'));
+    this.cargarReporte();
+  }
+
+  cargarReporte(): void {
     const token = localStorage.getItem('access_token');
     const headers = { Authorization: `Bearer ${token}` };
 
     this.http
-      .get<any>(`http://127.0.0.1:8000/api/profesor/materia/${this.detalleId}/reporte-entregas/`, { headers })
-      .subscribe(data => {
-        this.estudiantes = data.estudiantes;
-        this.actividades = data.actividades;
+      .get<any>(environment.apiUrl + `api/profesor/materia/${this.detalleId}/reporte-entregas/`, { headers })
+      .subscribe({
+        next: (data) => {
+          this.actividades = data.actividades;
+          this.estudiantes = data.estudiantes;
+        },
+        error: (err) => {
+          console.error('Error al cargar reporte:', err);
+        }
       });
   }
 
-  volver() {
+  volver(): void {
     this.router.navigate(['/profesor/materia', this.detalleId]);
   }
 }

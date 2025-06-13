@@ -5,7 +5,7 @@ import {
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, switchMap, filter, take } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
-
+import { environment } from '../../../environments/environment';
 @Injectable()
 export class TokenInterceptor implements HttpInterceptor {
   private isRefreshing = false;
@@ -50,7 +50,7 @@ export class TokenInterceptor implements HttpInterceptor {
 
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
-        return this.http.post<any>('http://127.0.0.1:8000/api/token/refresh/', { refresh: refreshToken }).pipe(
+        return this.http.post<any>(environment.apiUrl+ 'api/token/refresh/', { refresh: refreshToken }).pipe(
           switchMap((tokenResponse: any) => {
             this.isRefreshing = false;
             localStorage.setItem('access_token', tokenResponse.access);

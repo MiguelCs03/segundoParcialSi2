@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NgFor, NgClass, NgIf } from '@angular/common';
+import { NgFor, NgClass, NgIf, SlicePipe } from '@angular/common';
 import { AlumnoService } from '../../../core/services/alumno.service';
 import { SidebarComponent } from '../components/sidebar.component';
 import { AsistenciaChartComponent } from '../components/asistencia-chart.component';
+import { NotasGraficoComponent } from './notas-grafico.component';
 import { HttpClient } from '@angular/common/http';
-
+import { environment } from '../../../../environments/environment';
 // 👈 Definir interfaces para mejor tipado
 interface Tab {
   id: string;
@@ -17,7 +18,10 @@ interface Tab {
 @Component({
   selector: 'app-alumno-materia-detalle',
   standalone: true,
-  imports: [NgFor, NgClass, NgIf, SidebarComponent, AsistenciaChartComponent],
+  imports: [
+    NgFor, NgClass, NgIf, SidebarComponent, AsistenciaChartComponent, SlicePipe,
+    NotasGraficoComponent // 👈 agrega aquí
+  ],
   template: `
     <div class="flex min-h-screen">
       <!-- Sidebar -->
@@ -445,6 +449,11 @@ interface Tab {
                 </div>
               </div>
 
+              <!-- TAB 6: Gráficos -->
+              <div *ngIf="tabActual === 'graficos'" class="space-y-6">
+                <app-notas-grafico [actividades]="getActividadesEntregadas()"></app-notas-grafico>
+              </div>
+
             </div>
           </div>
         </div>
@@ -509,6 +518,13 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
       id: 'analisis',
       label: 'Análisis',
       icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>',
+      badge: null
+    },
+
+    {
+      id: 'graficos',
+      label: 'Gráficos',
+      icon: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17v-6m4 6V7m-8 10v-2"></path></svg>',
       badge: null
     }
   ];
@@ -694,38 +710,28 @@ export class AlumnoMateriaDetalleComponent implements OnInit {
   }
 
   // Llama a la predicción de nota
-  predecirNotaFinal(): void {
+  predecirNotaFinal() {
     this.cargandoPrediccion = true;
     this.prediccionNota = null;
 
-    // Calcula los promedios por dimensión
-    const ser = Number(this.calcularPromedioPorDimension('ser'));
-    const saber = Number(this.calcularPromedioPorDimension('saber'));
-    const hacer = Number(this.calcularPromedioPorDimension('hacer'));
-    const decidir = Number(this.calcularPromedioPorDimension('decidir'));
+    const actividadesEntregadas = this.getActividadesEntregadas();
+    const payload = {
+      actividades: actividadesEntregadas.map(act => ({
+        dimension: act.dimension,
+        nota: act.nota
+      })),
+      asistencia_porcentaje: this.asistencia.porcentaje
+    };
 
-    // Construye el payload solo con los campos > 0 y que no sean NaN
-    const payload: any = {};
-    if (!isNaN(ser) && ser > 0) payload.ser = ser;
-    if (!isNaN(saber) && saber > 0) payload.saber = saber;
-    if (!isNaN(hacer) && hacer > 0) payload.hacer = hacer;
-    if (!isNaN(decidir) && decidir > 0) payload.decidir = decidir;
-
-    if (Object.keys(payload).length === 0) {
-      this.prediccionNota = 'No hay datos suficientes para predecir.';
-      this.cargandoPrediccion = false;
-      return;
-    }
-
-    this.http.post<any>('http://127.0.0.1:8000/api/predecir/', payload)
+    // Cambiar la URL para usar environment
+    this.http.post<any>(environment.apiUrl + 'api/predecir/', payload)
       .subscribe({
-        next: (resp) => {
-          // Toma el campo nota_final_estimada del response
-          this.prediccionNota = resp.nota_final_estimada !== undefined ? resp.nota_final_estimada.toFixed(2) : 'Sin resultado';
+        next: (response) => {
+          this.prediccionNota = Math.round(response.nota_predicha).toString();
           this.cargandoPrediccion = false;
         },
-        error: () => {
-          this.prediccionNota = 'Error al obtener la predicción';
+        error: (error) => {
+          console.error('Error en predicción:', error);
           this.cargandoPrediccion = false;
         }
       });

@@ -2,12 +2,12 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-
+import { environment } from '../../../environments/environment';
 @Injectable({
   providedIn: 'root'
 })
 export class AlumnoService {
-  private apiUrl = 'http://127.0.0.1:8000/api';
+  private apiUrl = environment.apiUrl + 'api';
 
   constructor(private http: HttpClient) {}
 
@@ -52,7 +52,7 @@ export class AlumnoService {
   // 👈 Usar el nuevo endpoint que acabamos de crear
   getDetalleMateriaAlumno(detalleId: number): Observable<any> {
     const headers = this.getHeaders();
-    return this.http.get<any>(`${this.apiUrl}/alumno/materia/${detalleId}/detalle/`, { headers })
+    return this.http.get<any>(`${this.apiUrl}/alumno/materia/${detalleId}/detalle`, { headers })
       .pipe(
         tap(data => console.log('Detalle de materia recibido:', data)),
         catchError(error => {

@@ -660,12 +660,17 @@ class RegistrarseAsistenciaMovilView(APIView):
                 return Response({'error': 'La sesión ha expirado'}, status=400)
 
             # Verificar que el estudiante pertenece a la materia
-            from libreta.models import Libreta
+            from libreta.models import Libreta,Gestion
             try:
+                gestion_actual = Gestion.objects.get(nombre='2-2025')
                 Libreta.objects.get(
                     estudiante=estudiante,
-                    detalle_materia=sesion.detalle_materia
+                    detalle_materia=sesion.detalle_materia,
+                    gestion=gestion_actual
                 )
+            except Gestion.DoesNotExist:
+                return Response({'error': 'Gestión no encontrada'}, status=500)
+
             except Libreta.DoesNotExist:
                 return Response({'error': 'No perteneces a esta materia'}, status=403)
 

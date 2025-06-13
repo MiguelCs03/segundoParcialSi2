@@ -61,4 +61,20 @@ export class AlumnoService {
         })
       );
   }
+  
+  getHistorialMateriasPorAlumno() {
+    return this.http.get<any[]>(`${environment.apiUrl}/api/alumno/materias/historial/`)
+      .pipe(
+        tap(materias => console.log('Historial de materias recibido:', materias)),
+        catchError(this.handleError('getHistorialMateriasPorAlumno', []))
+      );
+  }
+
+  private handleError<T>(operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+      console.error(`Error en ${operation}:`, error);
+      return throwError(() => error);
+    };
+  }
+
 }

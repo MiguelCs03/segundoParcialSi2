@@ -18,8 +18,9 @@ import { Router } from '@angular/router';
 
         <h2 class="text-2xl font-bold mb-6">Bienvenido, Alumno</h2>
 
-        <!-- Resumen -->
+        <!-- Resumen en tarjetas -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <!-- Tarjetas existentes... -->
           <div class="bg-white p-4 rounded shadow">
             <p class="text-gray-500">Promedio actual</p>
             <p class="text-2xl font-bold text-blue-600">{{ resumen.promedio }}</p>
@@ -38,6 +39,18 @@ import { Router } from '@angular/router';
           </div>
         </div>
 
+        <!-- Botón de Historial de Materias -->
+        <div class="flex justify-end mb-4">
+          <button 
+            (click)="verHistorialMaterias()" 
+            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Historial de Materias
+          </button>
+        </div>
+
         <!-- Loading state -->
         <div *ngIf="cargando" class="flex justify-center items-center my-8">
           <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
@@ -49,7 +62,7 @@ import { Router } from '@angular/router';
           <p>{{ error }}</p>
         </div>
 
-        <!-- Materias -->
+        <!-- Materias actuales (existente) -->
         <div *ngIf="!cargando">
           <h3 class="text-xl font-semibold mb-2">Materias actuales</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -156,14 +169,13 @@ export class AlumnoDashboardComponent implements OnInit {
     };
 
     // 👈 Procesar materias conservando ID
-    if (data.materias && Array.isArray(data.materias)) {
-      this.materias = data.materias.map((m: any) => ({
-        id: m.id, // 👈 Conservar ID
-        nombre: m.nombre,
-        profesor: m.profesor,
-        promedio: m.promedio || 'N/A'
-      }));
-    }
+    const mappedMaterias = data.materias.map((m: any) => ({
+      id: m.id,
+      nombre: m.nombre,
+      profesor: m.profesor,
+      promedio: m.promedio || 'N/A'
+    }));
+    this.materias = this.filterLastUniqueSubjects(mappedMaterias);
 
     // Procesar actividades
     this.actividades = data.actividades_recientes || [];
@@ -175,7 +187,7 @@ export class AlumnoDashboardComponent implements OnInit {
         console.log('Materias recibidas desde backend:', materias);
         
         // 👈 Ya no necesitas mapear porque el backend devuelve la estructura correcta
-        this.materias = materias.map((m: any) => {
+        const mappedMaterias = materias.map((m: any) => {
           console.log('Procesando materia:', m);
           
           // Verificar que tiene ID
@@ -184,14 +196,13 @@ export class AlumnoDashboardComponent implements OnInit {
           }
           
           return {
-            id: m.id,           // 👈 ID del DetalleMateria desde backend
-            nombre: m.nombre,   // Nombre de la materia
-            profesor: m.profesor, // Nombre del profesor
-            promedio: m.promedio || 'N/A',
-            curso: m.curso,     // Nombre del curso
-            paralelo: m.paralelo // Nombre del paralelo
+            id: m.id,
+            nombre: m.nombre,
+            profesor: m.profesor,
+            promedio: m.promedio || 'N/A'
           };
         });
+        this.materias = this.filterLastUniqueSubjects(mappedMaterias);
         
         console.log('Materias procesadas para frontend:', this.materias);
         this.cargando = false;
@@ -219,7 +230,29 @@ export class AlumnoDashboardComponent implements OnInit {
     this.router.navigate(['/mi-rendimiento/materia', materia.id]);
   }
 
+  verHistorialMaterias(): void {
+    this.router.navigate(['/mi-rendimiento/historial']);
+  }
+
   trackByMateriaId(index: number, materia: any): any {
     return materia.id || index;
   }
+
+  // Add this method inside the AlumnoDashboardComponent class
+  filterLastUniqueSubjects(subjects: any[]): any[] {
+    // Use a Map to track the latest occurrence of each ID
+    const subjectMap = new Map<number, any>();
+    
+    // Loop through subjects and keep the latest occurrence of each ID
+    for (const subject of subjects) {
+      subjectMap.set(subject.id, subject);
+    }
+    
+    // Convert Map values to array
+    const uniqueSubjects = Array.from(subjectMap.values());
+    
+    // Return only the last 10 (or fewer if there are less than 10)
+    return uniqueSubjects.slice(Math.max(0, uniqueSubjects.length - 10));
+  }
 }
+

@@ -722,4 +722,7 @@ class RegistrarseAsistenciaMovilView(APIView):
             ip = x_forwarded_for.split(',')[0]
         else:
             ip = request.META.get('REMOTE_ADDR')
+
+        if ip and ':' in ip:
+             ip = ip.split(':')[0]
         return ip

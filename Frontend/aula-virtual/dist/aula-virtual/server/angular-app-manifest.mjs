@@ -102,7 +102,7 @@ export default {
   ],
   "src/app/modules/dashboard/pages/alumno-materia-detalle.component.ts": [
     {
-      "path": "chunk-2OGCNHUR.js",
+      "path": "chunk-JAE3IWRQ.js",
       "dynamicImport": false
     },
     {
@@ -152,8 +152,8 @@ export default {
   ]
 },
   assets: {
-    'index.csr.html': {size: 2348, hash: 'd9046721aa1dc055cedebd06ff9dc8c2b319cdaab19a3666e760514c5a8b74e4', text: () => import('./assets-chunks/index_csr_html.mjs').then(m => m.default)},
-    'index.server.html': {size: 1161, hash: '4fbd4fde71e838c9b3a1f120d2bdebb5ffad96247272f39b9825c4473ac9fde5', text: () => import('./assets-chunks/index_server_html.mjs').then(m => m.default)},
+    'index.csr.html': {size: 2348, hash: '6a84eb086f01e7459f4ecc1549242b681aca46f784f1d37f9c7d7b47b39e8265', text: () => import('./assets-chunks/index_csr_html.mjs').then(m => m.default)},
+    'index.server.html': {size: 1161, hash: '916096db568d57ce2f56900184712f2f62d84e9c83143edea8d8f08cfd6e93ea', text: () => import('./assets-chunks/index_server_html.mjs').then(m => m.default)},
     'styles-2RY2PCKT.css': {size: 27754, hash: '3w+t0uzA5hs', text: () => import('./assets-chunks/styles-2RY2PCKT_css.mjs').then(m => m.default)}
   },
 };

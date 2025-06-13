@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChartType, ChartData, ChartOptions } from 'chart.js';
-import { NgChartsModule } from 'ng2-charts';
+import { BaseChartDirective } from 'ng2-charts';
 
 interface Actividad {
   id?: number;
@@ -19,7 +19,7 @@ interface Actividad {
 @Component({
   selector: 'app-notas-grafico',
   standalone: true,
-  imports: [CommonModule, NgChartsModule],
+  imports: [CommonModule, BaseChartDirective],
   template: `
     <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg p-6 border border-gray-100">
       <!-- Header con estadísticas y controles -->

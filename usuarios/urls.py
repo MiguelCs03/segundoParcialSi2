@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     UsuarioViewSet, LoginView, LogoutView, CambiarContrasenaView,
     CustomTokenObtainPairView, EstudiantesDelTutorView, ResumenAlumnoView,
-    ResumenHijoTutorView, RendimientoDetalladoHijoView
+    ResumenHijoTutorView, RendimientoDetalladoHijoView,CambiarPasswordPorIdView
 )
 from . import controller_firebase as firebase_controller
 
@@ -42,6 +42,8 @@ urlpatterns = [
     path('notificacion/simple/<int:usuario_id>/', firebase_controller.enviar_notificacion_simple, name='notificacion_simple'),
     
     path('usuario/fcm-token/', actualizar_fcm_token, name='actualizar_fcm_token'),
+    path('cambiar-password-por-id/', CambiarPasswordPorIdView.as_view(), name='cambiar_password_por_id'),
+    # ...existing code...
 ]
 
 urlpatterns += router.urls

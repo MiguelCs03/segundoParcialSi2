@@ -432,3 +432,63 @@ class RendimientoDetalladoHijoView(APIView):
             "asistencia": asistencia_data,
             "tendencia": tendencia_data
         })
+    
+class CambiarPasswordPorIdView(APIView):
+    permission_classes = [IsAuthenticated]  # O remove si no quieres autenticación
+
+    @swagger_auto_schema(
+        operation_description="Cambiar contraseña de cualquier usuario usando su ID",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'usuario_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del usuario'),
+                'new_password': openapi.Schema(type=openapi.TYPE_STRING, description='Nueva contraseña'),
+            },
+            required=['usuario_id', 'new_password'],
+        ),
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING),
+                    'usuario_actualizado': openapi.Schema(type=openapi.TYPE_OBJECT),
+                }
+            ),
+            400: 'Error en los datos enviados',
+            404: 'Usuario no encontrado',
+        }
+    )
+    def post(self, request):
+        usuario_id = request.data.get('usuario_id')
+        new_password = request.data.get('new_password')
+
+        if not usuario_id or not new_password:
+            return Response({
+                'error': 'usuario_id y new_password son requeridos'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            usuario = Usuario.objects.get(id=usuario_id)
+            
+            # Cambiar y encriptar la contraseña
+            usuario.set_password(new_password)
+            usuario.save(update_fields=['password'])
+
+            return Response({
+                'message': 'Contraseña actualizada correctamente',
+                'usuario_actualizado': {
+                    'id': usuario.id,
+                    'nombre': usuario.nombre,
+                    'codigo': usuario.codigo,
+                    'fecha_actualizacion': usuario.date_joined if hasattr(usuario, 'date_joined') else 'N/A'
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Usuario.DoesNotExist:
+            return Response({
+                'error': f'Usuario con ID {usuario_id} no encontrado'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': f'Error interno: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -22,7 +22,7 @@ if firebase_creds_string:
         # Convertir el string JSON a diccionario
         firebase_creds_dict = json.loads(firebase_creds_string)
         cred = credentials.Certificate(firebase_creds_dict)
-        firebase_admin.initialize_app(cred)
+        firebase_admin.initialize_app(cred) 
         print("✅ Firebase inicializado correctamente")
     except json.JSONDecodeError:
         print("❌ Error al parsear las credenciales de Firebase")

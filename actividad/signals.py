@@ -184,7 +184,7 @@ def realizar_prediccion_ml(promedios_dimensiones: Dict[str, float]) -> Optional[
     try:
         # URL del endpoint de predicción (ajustar según tu configuración)
         # Asumiendo que tienes el endpoint que ya definiste en views.py
-        url = "http://127.0.0.1:8000/api/predecir/"  # URL corregida
+        url = "https://aula-virtual-backend-d3cachhhhcf2fxbn.centralus-01.azurewebsites.net/api/predecir/"  # URL corregida
         
         # Preparar datos para enviar
         data = {}

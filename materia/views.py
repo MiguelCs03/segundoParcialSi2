@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from datetime import date, datetime
-
+import traceback
 from libreta.models import Libreta
 from .models import Nivel, Materia, DetalleMateria, Asistencia
 from .serializers import NivelSerializer, MateriaSerializer, DetalleMateriaSerializer, AsistenciaSerializer
@@ -283,17 +283,22 @@ class MateriaDetalleAlumnoView(APIView):
         except DetalleMateria.DoesNotExist:
             return Response({'error': 'Materia no encontrada'}, status=404)
 
+        # CORREGIDO: Usar filter().first() para evitar error de múltiples objetos
         try:
-            Libreta.objects.get(estudiante=estudiante, detalle_materia=detalle)
-            return detalle
-        except Libreta.DoesNotExist:
-            return Response({'error': 'No tienes acceso a esta materia'}, status=403)
+            libreta = Libreta.objects.filter(estudiante=estudiante, detalle_materia=detalle).first()
+            if libreta:
+                return detalle
+            else:
+                return Response({'error': 'No tienes acceso a esta materia'}, status=403)
+        except Exception as e:
+            return Response({'error': 'Error al verificar acceso'}, status=500)
 
     def _obtener_datos_materia(self, detalle, estudiante):
         """Obtiene los datos básicos de la materia"""
         try:
-            libreta = Libreta.objects.get(estudiante=estudiante, detalle_materia=detalle)
-            promedio = float(libreta.nota) if hasattr(libreta, 'nota') and libreta.nota else 85.5
+            # CORREGIDO: Usar filter().first() para evitar error de múltiples objetos
+            libreta = Libreta.objects.filter(estudiante=estudiante, detalle_materia=detalle).first()
+            promedio = float(libreta.nota) if libreta and hasattr(libreta, 'nota') and libreta.nota else 85.5
         except:
             promedio = 85.5
 
@@ -321,12 +326,12 @@ class MateriaDetalleAlumnoView(APIView):
                     "id": actividad.id,
                     "titulo": actividad.nombre,
                     "descripcion": actividad.descripcion,
-                    "dimension": actividad.dimension.nombre,
+                    "dimension": actividad.dimension.nombre if actividad.dimension else "saber",
                     "fecha_creacion": actividad.fechaCreacion.isoformat() if actividad.fechaCreacion else None,
                     "fecha_entrega": fecha_entrega_real,
                     "estado": estado,
                     "nota": float(nota) if nota else None,
-                    "tipo": actividad.dimension.nombre
+                    "tipo": actividad.dimension.nombre if actividad.dimension else "saber"
                 })
             
             return actividades_data
@@ -340,7 +345,10 @@ class MateriaDetalleAlumnoView(APIView):
                     "fecha_entrega": "2025-06-15T00:00:00Z",
                     "estado": "Entregado",
                     "nota": 85,
-                    "tipo": "Examen"
+                    "tipo": "saber",
+                    "dimension": "saber",
+                    "descripcion": "Actividad de ejemplo",
+                    "fecha_creacion": "2025-06-01T00:00:00Z"
                 }
             ]
 
@@ -398,7 +406,7 @@ class MateriaDetalleAlumnoView(APIView):
                 "materia_especifica": detalle.materia.nombre,
                 "error": "No se pudieron cargar las asistencias"
             }
-
+        
 from django.utils import timezone
 from datetime import timedelta
 import random

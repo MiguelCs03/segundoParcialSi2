@@ -434,7 +434,7 @@ class RendimientoDetalladoHijoView(APIView):
         })
     
 class CambiarPasswordPorIdView(APIView):
-    permission_classes = [IsAuthenticated]  # O remove si no quieres autenticación
+   # permission_classes = [IsAuthenticated]  # O remove si no quieres autenticación
 
     @swagger_auto_schema(
         operation_description="Cambiar contraseña de cualquier usuario usando su ID",

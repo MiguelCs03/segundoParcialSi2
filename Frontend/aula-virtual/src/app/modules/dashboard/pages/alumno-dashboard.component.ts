@@ -156,14 +156,13 @@ export class AlumnoDashboardComponent implements OnInit {
     };
 
     // 👈 Procesar materias conservando ID
-    if (data.materias && Array.isArray(data.materias)) {
-      this.materias = data.materias.map((m: any) => ({
-        id: m.id, // 👈 Conservar ID
-        nombre: m.nombre,
-        profesor: m.profesor,
-        promedio: m.promedio || 'N/A'
-      }));
-    }
+    const mappedMaterias = data.materias.map((m: any) => ({
+      id: m.id,
+      nombre: m.nombre,
+      profesor: m.profesor,
+      promedio: m.promedio || 'N/A'
+    }));
+    this.materias = this.filterLastUniqueSubjects(mappedMaterias);
 
     // Procesar actividades
     this.actividades = data.actividades_recientes || [];
@@ -175,7 +174,7 @@ export class AlumnoDashboardComponent implements OnInit {
         console.log('Materias recibidas desde backend:', materias);
         
         // 👈 Ya no necesitas mapear porque el backend devuelve la estructura correcta
-        this.materias = materias.map((m: any) => {
+        const mappedMaterias = materias.map((m: any) => {
           console.log('Procesando materia:', m);
           
           // Verificar que tiene ID
@@ -184,14 +183,13 @@ export class AlumnoDashboardComponent implements OnInit {
           }
           
           return {
-            id: m.id,           // 👈 ID del DetalleMateria desde backend
-            nombre: m.nombre,   // Nombre de la materia
-            profesor: m.profesor, // Nombre del profesor
-            promedio: m.promedio || 'N/A',
-            curso: m.curso,     // Nombre del curso
-            paralelo: m.paralelo // Nombre del paralelo
+            id: m.id,
+            nombre: m.nombre,
+            profesor: m.profesor,
+            promedio: m.promedio || 'N/A'
           };
         });
+        this.materias = this.filterLastUniqueSubjects(mappedMaterias);
         
         console.log('Materias procesadas para frontend:', this.materias);
         this.cargando = false;
@@ -221,5 +219,22 @@ export class AlumnoDashboardComponent implements OnInit {
 
   trackByMateriaId(index: number, materia: any): any {
     return materia.id || index;
+  }
+
+  // Add this method inside the AlumnoDashboardComponent class
+  filterLastUniqueSubjects(subjects: any[]): any[] {
+    // Use a Map to track the latest occurrence of each ID
+    const subjectMap = new Map<number, any>();
+    
+    // Loop through subjects and keep the latest occurrence of each ID
+    for (const subject of subjects) {
+      subjectMap.set(subject.id, subject);
+    }
+    
+    // Convert Map values to array
+    const uniqueSubjects = Array.from(subjectMap.values());
+    
+    // Return only the last 10 (or fewer if there are less than 10)
+    return uniqueSubjects.slice(Math.max(0, uniqueSubjects.length - 10));
   }
 }

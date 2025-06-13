@@ -18,8 +18,9 @@ import { Router } from '@angular/router';
 
         <h2 class="text-2xl font-bold mb-6">Bienvenido, Alumno</h2>
 
-        <!-- Resumen -->
+        <!-- Resumen en tarjetas -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <!-- Tarjetas existentes... -->
           <div class="bg-white p-4 rounded shadow">
             <p class="text-gray-500">Promedio actual</p>
             <p class="text-2xl font-bold text-blue-600">{{ resumen.promedio }}</p>
@@ -38,6 +39,18 @@ import { Router } from '@angular/router';
           </div>
         </div>
 
+        <!-- Botón de Historial de Materias -->
+        <div class="flex justify-end mb-4">
+          <button 
+            (click)="verHistorialMaterias()" 
+            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Historial de Materias
+          </button>
+        </div>
+
         <!-- Loading state -->
         <div *ngIf="cargando" class="flex justify-center items-center my-8">
           <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
@@ -49,7 +62,7 @@ import { Router } from '@angular/router';
           <p>{{ error }}</p>
         </div>
 
-        <!-- Materias -->
+        <!-- Materias actuales (existente) -->
         <div *ngIf="!cargando">
           <h3 class="text-xl font-semibold mb-2">Materias actuales</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -217,6 +230,10 @@ export class AlumnoDashboardComponent implements OnInit {
     this.router.navigate(['/mi-rendimiento/materia', materia.id]);
   }
 
+  verHistorialMaterias(): void {
+    this.router.navigate(['/mi-rendimiento/historial']);
+  }
+
   trackByMateriaId(index: number, materia: any): any {
     return materia.id || index;
   }
@@ -238,3 +255,5 @@ export class AlumnoDashboardComponent implements OnInit {
     return uniqueSubjects.slice(Math.max(0, uniqueSubjects.length - 10));
   }
 }
+
+

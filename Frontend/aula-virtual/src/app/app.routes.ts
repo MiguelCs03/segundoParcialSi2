@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { AlumnoHistorialMateriasComponent } from './modules/dashboard/pages/alumno-historial-materias.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -74,6 +75,11 @@ export const routes: Routes = [
   {
    path: 'no-autorizado',
    loadComponent: () => import('./shared/pages/no-autorizado.component').then(m => m.NoAutorizadoComponent)
+  },
+  {
+    path: 'mi-rendimiento/historial',
+    component: AlumnoHistorialMateriasComponent,
+    canActivate: [authGuard]
   }
 
 ];
